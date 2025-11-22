@@ -11,10 +11,10 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 6.  [completed] Set up initial documentation, including `README.md` and the `/docs` folder structure.
 
 ## Phase 2: Base Strategy & Backtesting Framework
-7.  [pending] Develop the parent `base_strategy.py` to handle position sizing and stop-loss logic.
-8.  [pending] Create a public `simple_demo.py` strategy (e.g., a moving average crossover) inheriting from the base strategy.
-9.  [pending] Implement the backtesting script `backtesting/run_backtest.py` to test a single strategy.
-10. [pending] Generate the first backtest report and save it to the `reports/` directory.
+7.  [completed] Develop the parent `base_strategy.py` to handle position sizing and stop-loss logic.
+8.  [completed] Create a public `simple_demo.py` strategy (e.g., a moving average crossover) inheriting from the base strategy.
+9.  [completed] Implement the backtesting script `backtesting/run_backtest.py` to test a single strategy.
+10. [completed] Generate the first backtest report and save it to the `reports/` directory.
 
 ## Phase 3: Feature Engineering & ML Model Training
 11. [pending] Develop the shared `src/feature_engineering.py` module with common technical indicators.

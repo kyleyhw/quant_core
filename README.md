@@ -16,33 +16,47 @@ The system leverages the following key technologies:
 *   **Machine Learning:** `xgboost`, `scikit-learn`
 *   **Operations:** `python-dotenv` (for secure handling of secrets), `requests` (for notifications via Discord/Telegram webhooks)
 
+## Project Documentation
+
+For a detailed understanding of the project's architecture, logic, and design choices, please refer to the documentation hub.
+
+*   **[Project Documentation Hub](./docs/00_Project_Overview.md)**
+
 ## Directory Structure
 
 The project adheres to a strict directory structure for organization and clarity:
 
 ```
-ibkr_trading_bot/
-├── readme.md              # Project overview and documentation
-├── docs/                  # Documentation and additional guides
-├── data/                  # Historical CSVs (GitIgnored)
-├── models/                # Trained XGBoost/ML models (GitIgnored)
-├── logs/                  # Execution logs (GitIgnored)
-├── reports/               # Backtest comparison results (GitIgnored)
-├── research/              # Jupyter notebooks for training & analysis
-├── src/
-│   ├── connection.py      # Handles connection to TWS/Gateway
-│   ├── data_loader.py     # Standardized data fetching utilities
-│   ├── feature_engineering.py  # CRITICAL: Shared logic for indicator calculation
-│   ├── execution.py       # Order placement with SAFETY CHECKS
-│   ├── notifications.py   # Discord/Telegram webhook alerts
-│   └── metrics.py         # Mathematical utilities for Sharpe, Drawdown, Position Sizing
-├── strategies/
-│   ├── private/           # Git Submodule for proprietary strategies
-│   ├── base_strategy.py   # Parent class for all trading strategies (handles stops/sizing)
-│   └── simple_demo.py     # Public example strategy for demonstration
+ibkr_quant_core/
+├── .env                  # Local environment variables (IGNORED BY GIT)
+├── .gitignore            # Specifies files and directories to be ignored by Git
+├── GEMINI.md             # Gemini-specific instructions and project context
+├── README.md             # This file: Project overview and high-level documentation
+├── requirements.txt      # Project dependencies
 ├── backtesting/
-│   ├── run_backtest.py    # Script for single strategy deep-dive backtesting
-│   └── benchmark.py       # Script for multi-strategy comparison and benchmarking
+│   ├── run_backtest.py   # Script for single strategy deep-dive backtesting
+│   └── benchmark.py      # Script for multi-strategy comparison
+├── data/                 # Historical CSV data (Ignored by Git)
+├── docs/                 # Detailed project documentation
+│   ├── 00_Project_Overview.md
+│   ├── 01_Core_Infrastructure.md
+│   ├── 02_Strategy_Development.md
+│   └── 03_Backtesting_and_Reporting.md
+├── logs/                 # Execution logs (Ignored by Git)
+├── models/               # Trained ML models (Ignored by Git)
+├── reports/              # Backtest reports and plots (Ignored by Git)
+├── research/             # Jupyter notebooks for training & analysis
+├── src/
+│   ├── connection.py     # Handles connection to TWS/Gateway
+│   ├── data_loader.py    # Standardized data fetching utilities
+│   ├── execution.py      # Order placement with safety checks
+│   ├── feature_engineering.py # Shared logic for indicator calculation
+│   ├── metrics.py        # Math utilities for Sharpe, Drawdown, etc.
+│   └── notifications.py  # Discord/Telegram webhook alerts
+└── strategies/
+    ├── base_strategy.py  # Parent class for all strategies
+    ├── simple_demo.py    # Public example strategy
+    └── private/          # Git Submodule for proprietary strategies
 ```
 
 ## Getting Started
