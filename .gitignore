@@ -9,4 +9,4 @@
 __pycache__/
 *.pyc
 
-# Data, logs, models
+# Logs, models
