@@ -12,11 +12,9 @@ This documentation provides a detailed overview of the ibkr open-core algorithmi
 
 -   **[strategy development](./strategy_development.md)**
     -   details the base strategy class, risk management framework, and the implementation of a simple example strategy.
-        *   **[simple ma crossover formulation](./formulations/simple_ma_crossover_formulation.md)**: mathematical formulation for the simple ma crossover strategy.
-        *   **[rsi 2-period strategy](./strategies/rsi_2_period.py)**: implementation of the rsi 2-period strategy.
-        *   **[rsi 2-period formulation](./formulations/rsi_2_period_formulation.md)**: mathematical formulation for the rsi 2-period strategy.
-        *   **[bollinger bands strategy](./strategies/bollinger_bands.py)**: implementation of the bollinger bands strategy.
-        *   **[bollinger bands formulation](./formulations/bollinger_bands_formulation.md)**: mathematical formulation for the bollinger bands strategy.
+        *   **[simple ma crossover](./strategies/simple_ma_crossover.md)**: mathematical formulation for the simple ma crossover strategy.
+        *   **[rsi 2-period](./strategies/rsi_2_period.md)**: mathematical formulation for the rsi 2-period strategy.
+        *   **[bollinger bands](./strategies/bollinger_bands.md)**: mathematical formulation for the bollinger bands strategy.
 
 -   **[backtesting and reporting](./run_backtesting/backtesting_and_reporting.md)**
     -   covers the process of running backtests, generating performance reports, and interpreting the results.
