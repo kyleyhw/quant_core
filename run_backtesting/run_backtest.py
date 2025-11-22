@@ -117,11 +117,30 @@ def main():
         
         f.write("## Strategy Parameters\n")
         strategy_params = stats['_strategy']
-        f.write(f"- **Fast MA Period:** {strategy_params.fast_ma_period}\n")
-        f.write(f"- **Slow MA Period:** {strategy_params.slow_ma_period}\n")
-        f.write(f"- **Risk Percent:** {strategy_params.risk_percent:.2%}\n")
-        f.write(f"- **Stop-Loss Percent:** {strategy_params.stop_loss_pct:.2%}\n")
-        f.write(f"- **Take-Profit Percent:** {strategy_params.take_profit_pct:.2%}\n\n")
+        
+        # Dynamically print parameters based on availability in the strategy
+        if hasattr(strategy_params, 'fast_ma_period'):
+            f.write(f"- **Fast MA Period:** {strategy_params.fast_ma_period}\n")
+        if hasattr(strategy_params, 'slow_ma_period'):
+            f.write(f"- **Slow MA Period:** {strategy_params.slow_ma_period}\n")
+        if hasattr(strategy_params, 'rsi_period'):
+            f.write(f"- **RSI Period:** {strategy_params.rsi_period}\n")
+        if hasattr(strategy_params, 'oversold_threshold'):
+            f.write(f"- **Oversold Threshold:** {strategy_params.oversold_threshold}\n")
+        if hasattr(strategy_params, 'overbought_threshold'):
+            f.write(f"- **Overbought Threshold:** {strategy_params.overbought_threshold}\n")
+        if hasattr(strategy_params, 'bb_period'):
+            f.write(f"- **BB Period:** {strategy_params.bb_period}\n")
+        if hasattr(strategy_params, 'bb_std_dev'):
+            f.write(f"- **BB Std Dev:** {strategy_params.bb_std_dev}\n")
+        
+        # Base strategy parameters (always expected)
+        if hasattr(strategy_params, 'risk_percent'):
+            f.write(f"- **Risk Percent:** {strategy_params.risk_percent:.2%}\n")
+        if hasattr(strategy_params, 'stop_loss_pct'):
+            f.write(f"- **Stop-Loss Percent:** {strategy_params.stop_loss_pct:.2%}\n")
+        if hasattr(strategy_params, 'take_profit_pct'):
+            f.write(f"- **Take-Profit Percent:** {strategy_params.take_profit_pct:.2%}\n\n")
 
         f.write("## Backtest Metrics\n")
         stats_to_report = stats[~stats.index.str.startswith('_')]
