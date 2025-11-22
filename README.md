@@ -35,17 +35,17 @@ This documentation provides a detailed overview of the IBKR Open-Core Algorithmi
 ### Documentation Index
 
 1.  **[core infrastructure](./docs/core_infrastructure.md)**
-    -   Explains the foundational modules for connecting to Interactive Brokers, loading data, and sending notifications.
+    -   explains the foundational modules for connecting to interactive brokers, loading data, and sending notifications.
 
 2.  **[strategy development](./docs/strategy_development.md)**
-    -   Details the base strategy class, risk management framework, and the implementation of a simple example strategy.
-        *   **[simple ma crossover formulation](./docs/formulations/simple_ma_crossover_formulation.md)**: Mathematical formulation for the Simple MA Crossover strategy.
+    -   details the base strategy class, risk management framework, and the implementation of a simple example strategy.
+        *   **[simple ma crossover formulation](./docs/formulations/simple_ma_crossover_formulation.md)**: mathematical formulation for the simple ma crossover strategy.
 
 3.  **[backtesting and reporting](./docs/backtesting_and_reporting.md)**
-    -   Covers the process of running backtests, generating performance reports, and interpreting the results.
+    -   covers the process of running backtests, generating performance reports, and interpreting the results.
 
 -   **[interpreting report](./docs/interpreting_report.md)**
-    -   Provides detailed explanations of the various performance metrics found in backtest reports.
+    -   provides detailed explanations of the various performance metrics found in backtest reports.
 
 ## Directory Structure
 
@@ -59,7 +59,7 @@ ibkr_quant_core/
 ├── PROJECT_PLAN.md       # High-level project development plan
 ├── README.md             # This file: Project overview and high-level documentation
 ├── requirements.txt      # Project dependencies
-├── backtesting/
+├── backtest_runners/
 │   ├── run_backtest.py   # Script for single strategy deep-dive backtesting
 │   └── benchmark.py      # Script for multi-strategy comparison
 ├── data/                 # Historical CSV data (Ignored by Git)
@@ -68,12 +68,12 @@ ibkr_quant_core/
 │   ├── core_infrastructure.md
 │   ├── strategy_development.md
 │   ├── backtesting_and_reporting.md
-│   ├── interpreting_metrics.md
+│   ├── interpreting_report.md
 │   └── formulations/
 │       └── simple_ma_crossover_formulation.md
 ├── logs/                 # Execution logs (Ignored by Git)
 ├── models/               # Trained ML models (Ignored by Git)
-├── reports/              # Backtest reports and plots (Ignored by Git)
+├── reports/              # Backtest reports and plots (NOT IGNORED BY GIT)
 ├── research/             # Jupyter notebooks for training & analysis
 ├── src/
 │   ├── connection.py     # Handles connection to TWS/Gateway
@@ -109,7 +109,7 @@ To get started with the IBKR Open-Core Algorithmic Trading Bot, follow these ste
 5.  **Explore strategies:**
     Review the `strategies/simple_demo.py` for an example trading strategy. For proprietary strategies, refer to the `strategies/private/` submodule.
 6.  **Run backtests:**
-    Utilize the scripts in the `backtesting/` directory to evaluate strategy performance.
+    Utilize the scripts in the `backtest_runners/` directory to evaluate strategy performance.
 
 ## Core Architectural Rules
 
