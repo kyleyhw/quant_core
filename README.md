@@ -70,8 +70,10 @@ ibkr_quant_core/
 │   ├── strategy_development.md
 │   ├── backtesting_and_reporting.md
 │   ├── interpreting_report.md
-│   └── formulations/
-│       └── simple_ma_crossover_formulation.md
+│   └── strategies/
+│       ├── simple_ma_crossover_formulation.md
+│       ├── rsi_2_period_formulation.md
+│       └── bollinger_bands_formulation.md
 ├── logs/                 # Execution logs (Ignored by Git)
 ├── models/               # Trained ML models (Ignored by Git)
 ├── reports/              # Backtest reports and plots (NOT IGNORED BY GIT)
@@ -85,7 +87,9 @@ ibkr_quant_core/
 │   └── notifications.py  # Discord/Telegram webhook alerts
 └── strategies/
     ├── base_strategy.py  # Parent class for all strategies
-    ├── simple_demo.py    # Public example strategy
+    ├── simple_ma_crossover.py    # Public example strategy
+    ├── rsi_2_period.py # RSI 2-period strategy
+    ├── bollinger_bands.py # Bollinger Bands strategy
     └── private/          # Git Submodule for proprietary strategies
 ```
 
