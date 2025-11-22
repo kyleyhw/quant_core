@@ -17,7 +17,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 10. [completed] Generate the first backtest report and save it to the `reports/` directory.
 
 ## Phase 3: Feature Engineering & ML Model Training
-11. [pending] Develop the shared `src/feature_engineering.py` module with common technical indicators.
+11. [pending] Create a script in research/ for model training.
 12. [pending] Create a Jupyter notebook in `research/` for model training.
 13. [pending] Save the trained model artifact to the `models/` directory.
 

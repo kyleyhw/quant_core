@@ -4,7 +4,10 @@ This documentation provides a detailed overview of the IBKR Open-Core Algorithmi
 
 ## Documentation Index
 
-1.  **[Core Infrastructure](./01_Core_Infrastructure.md)**
+1.  **[Project Plan](../PROJECT_PLAN.md)**
+    -   Outlines the planned phases and tasks for the project's development.
+
+2.  **[Core Infrastructure](./01_Core_Infrastructure.md)**
     -   Explains the foundational modules for connecting to Interactive Brokers, loading data, and sending notifications.
 
 2.  **[Strategy Development](./02_Strategy_Development.md)**

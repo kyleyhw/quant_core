@@ -16,6 +16,12 @@ The system leverages the following key technologies:
 *   **Machine Learning:** `xgboost`, `scikit-learn`
 *   **Operations:** `python-dotenv` (for secure handling of secrets), `requests` (for notifications via Discord/Telegram webhooks)
 
+## Project Plan
+
+For a detailed roadmap of the project's development phases and tasks, refer to the project plan:
+
+*   **[Project Plan](./PROJECT_PLAN.md)**
+
 ## Project Documentation
 
 For a detailed understanding of the project's architecture, logic, and design choices, please refer to the documentation hub.
@@ -32,6 +38,7 @@ ibkr_quant_core/
 ├── .env                  # Local environment variables (IGNORED BY GIT)
 ├── .gitignore            # Specifies files and directories to be ignored by Git
 ├── GEMINI.md             # Gemini-specific instructions and project context
+├── PROJECT_PLAN.md       # High-level project development plan
 ├── README.md             # This file: Project overview and high-level documentation
 ├── requirements.txt      # Project dependencies
 ├── backtesting/
@@ -42,7 +49,8 @@ ibkr_quant_core/
 │   ├── 00_Project_Overview.md
 │   ├── 01_Core_Infrastructure.md
 │   ├── 02_Strategy_Development.md
-│   └── 03_Backtesting_and_Reporting.md
+│   ├── 03_Backtesting_and_Reporting.md
+│   └── 04_Interpreting_Metrics.md
 ├── logs/                 # Execution logs (Ignored by Git)
 ├── models/               # Trained ML models (Ignored by Git)
 ├── reports/              # Backtest reports and plots (Ignored by Git)
