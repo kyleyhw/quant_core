@@ -48,16 +48,28 @@ by combining the visual insights from the plots with the quantitative metrics, y
 
 ## interpreting strategy parameters
 
-strategy parameters are the configurable values that define a strategy's behavior. they are crucial for tailoring a strategy to specific market conditions, assets, or risk appetites. understanding how to interpret these parameters is key to effective backtesting, optimization, and eventual live trading.
+the backtest reports include various parameters that define how each strategy operates. understanding these specific parameters is crucial for interpreting a strategy’s behavior and results. these are the general parameters applicable across most strategies. specific indicator parameters (e.g., ma periods, rsi periods, bb periods) are discussed in the mathematical formulation document for each strategy.
 
--   **purpose**: parameters allow for flexibility and fine-tuning of a strategy's logic. changing a parameter can significantly alter when a strategy enters or exits trades, how much risk it takes, and ultimately its profitability.
--   **examples**: common parameters include moving average periods (e.g., fast ma period, slow ma period), rsi periods and thresholds (e.g., rsi period, oversold threshold, overbought threshold), bollinger band periods and standard deviation multipliers (e.g., bb period, bb std dev), and risk management settings (e.g., risk percent, stop-loss pct, take-profit pct).
--   **tuning and optimization**: backtesting tools often allow for optimizing parameters across a range of values to find the combination that yields the best performance according to chosen metrics (e.g., highest sharpe ratio).
--   **impact on strategy behavior**:
-    -   **shorter periods (e.g., ma periods, rsi periods)**: tend to make a strategy more sensitive to recent price action, leading to more frequent trades and potentially earlier signals, but also more false signals (whipsaws).
-    -   **longer periods**: tend to make a strategy less sensitive, resulting in fewer trades, delayed signals, but potentially more reliable trends.
-    -   **thresholds (e.g., rsi thresholds)**: define the sensitivity of overbought/oversold conditions. tighter thresholds (e.g., 20/80 for rsi) lead to fewer, more extreme signals, while wider thresholds (e.g., 30/70) generate more signals.
-    -   **risk management parameters**: directly control the capital risked per trade, the maximum acceptable loss, and the target profit. these are fundamental to managing overall portfolio risk.
+### risk percent (all strategies)
+-   **definition**: the percentage of total equity to risk on a single trade. this is a critical component of position sizing.
+-   **significance**: directly controls the capital allocation and overall portfolio risk.
+-   **impact**:
+    -   **higher risk percent**: larger position sizes, higher potential profit/loss per trade.
+    -   **lower risk percent**: smaller position sizes, lower potential profit/loss per trade.
+
+### stop-loss percent (all strategies)
+-   **definition**: the percentage below the entry price at which a trailing stop-loss order is placed.
+-   **significance**: defines the maximum acceptable loss for a trade and is key to risk management.
+-   **impact**:
+    -   **tighter stop-loss**: smaller potential losses, but more frequent stop-outs (getting stopped out prematurely).
+    -   **wider stop-loss**: larger potential losses, but less frequent stop-outs.
+
+### take-profit percent (all strategies)
+-   **definition**: the percentage above the entry price at which a take-profit order is placed.
+-   **significance**: defines the target profit for a trade. if set to 0, no take-profit is used.
+-   **impact**:
+    -   **lower take-profit**: more frequent winning trades but smaller gains.
+    -   **higher take-profit**: fewer winning trades but larger potential gains.
 
 ## interpreting the metrics
 
