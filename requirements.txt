@@ -1,0 +1,9 @@
+ib_insync
+pandas
+numpy
+pandas-ta
+backtesting
+xgboost
+scikit-learn
+python-dotenv
+requests
