@@ -12,6 +12,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from strategies.simple_demo import SimpleMACrossover
+from strategies.rsi_2_period import RSI2PeriodStrategy
+from strategies.bollinger_bands import BollingerBandsStrategy
 
 def get_strategy_class(strategy_name: str):
     """
@@ -19,6 +21,10 @@ def get_strategy_class(strategy_name: str):
     """
     if strategy_name == "simple-ma-crossover":
         return SimpleMACrossover
+    elif strategy_name == "rsi-2-period":
+        return RSI2PeriodStrategy
+    elif strategy_name == "bollinger-bands":
+        return BollingerBandsStrategy
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
