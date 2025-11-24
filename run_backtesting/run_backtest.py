@@ -14,6 +14,7 @@ if project_root not in sys.path:
 from strategies.simple_ma_crossover import SimpleMACrossover
 from strategies.rsi_2_period import RSI2PeriodStrategy
 from strategies.bollinger_bands import BollingerBandsStrategy
+from src.commission_models import ibkr_tiered_commission
 try:
     from strategies.private.regime_based_strategy import MLRegimeStrategy
     from strategies.private.hmm_regime_strategy import HmmRegimeStrategy
@@ -69,12 +70,6 @@ def main():
         default=10000,
         help='Initial cash for the backtest.'
     )
-    parser.add_argument(
-        '--commission',
-        type=float,
-        default=0.005,  # 0.5% as specified
-        help='Commission per trade.'
-    )
     args = parser.parse_args()
 
     # --- 1. Load Data ---
@@ -105,12 +100,12 @@ def main():
     StrategyClass = get_strategy_class(args.strategy)
     
     # --- 3. Run Backtest ---
-    print(f"\nRunning backtest with initial cash ${args.cash:,.2f} and {args.commission:.3%} commission...")
+    print(f"\nRunning backtest with initial cash ${args.cash:,.2f} and IBKR Tiered commission model...")
     bt = Backtest(
         data,
         StrategyClass,
         cash=args.cash,
-        commission=args.commission
+        commission=ibkr_tiered_commission
     )
     
     stats = bt.run()
