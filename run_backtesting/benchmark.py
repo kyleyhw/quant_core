@@ -50,7 +50,7 @@ def discover_strategies():
 
     for path in search_paths:
         for file in path.glob('*.py'):
-            if file.name.startswith(('__init__', 'base_', 'pairs_')):
+            if file.name.startswith(('__init__', 'base_')):
                 continue
 
             module_name = f"{path.relative_to(Path(project_root)).as_posix().replace('/', '.')}.{file.stem}"
