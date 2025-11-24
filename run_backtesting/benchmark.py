@@ -18,9 +18,9 @@ from src.commission_models import ibkr_tiered_commission
 
 # Attempt to import private strategies
 try:
-    from strategies.private.regime_based_strategy import MLRegimeStrategy
-    from strategies.private.hmm_regime_strategy import HmmRegimeStrategy
-    from strategies.private.pairs_trading_strategy import PairsTradingStrategy
+    from strategies.private.private_strategies.regime_based_strategy import MLRegimeStrategy
+    from strategies.private.private_strategies.hmm_regime_strategy import HmmRegimeStrategy
+    from strategies.private.private_strategies.pairs_trading_strategy import PairsTradingStrategy
     PRIVATE_STRATEGIES_AVAILABLE = True
 except ImportError:
     PRIVATE_STRATEGIES_AVAILABLE = False

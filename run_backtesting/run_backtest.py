@@ -16,10 +16,11 @@ from strategies.rsi_2_period import RSI2PeriodStrategy
 from strategies.bollinger_bands import BollingerBandsStrategy
 from src.commission_models import ibkr_tiered_commission
 try:
-    from strategies.private.regime_based_strategy import MLRegimeStrategy
-    from strategies.private.pairs_trading_strategy import PairsTradingStrategy
-    from strategies.private.meta_regime_filter_strategy import MetaRegimeFilterStrategy
-    from strategies.private.dynamic_sizing_strategy import DynamicSizingStrategy
+    from strategies.private.private_strategies.regime_based_strategy import MLRegimeStrategy
+    from strategies.private.private_strategies.hmm_regime_strategy import HmmRegimeStrategy
+    from strategies.private.private_strategies.pairs_trading_strategy import PairsTradingStrategy
+    from strategies.private.private_strategies.meta_regime_filter_strategy import MetaRegimeFilterStrategy
+    from strategies.private.private_strategies.dynamic_sizing_strategy import DynamicSizingStrategy
 except ImportError:
     MLRegimeStrategy = None
     HmmRegimeStrategy = None
