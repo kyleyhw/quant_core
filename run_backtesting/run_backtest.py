@@ -16,8 +16,12 @@ from strategies.rsi_2_period import RSI2PeriodStrategy
 from strategies.bollinger_bands import BollingerBandsStrategy
 try:
     from strategies.private.regime_based_strategy import MLRegimeStrategy
+    from strategies.private.hmm_regime_strategy import HmmRegimeStrategy
+    from strategies.private.pairs_trading_strategy import PairsTradingStrategy
 except ImportError:
     MLRegimeStrategy = None
+    HmmRegimeStrategy = None
+    PairsTradingStrategy = None
 
 def get_strategy_class(strategy_name: str):
     """
@@ -31,8 +35,14 @@ def get_strategy_class(strategy_name: str):
         return BollingerBandsStrategy
     elif strategy_name == "ml-regime" and MLRegimeStrategy:
         return MLRegimeStrategy
-    elif strategy_name == "ml-regime" and not MLRegimeStrategy:
-        raise ImportError("Could not import MLRegimeStrategy. Is the private submodule available?")
+    elif strategy_name == "hmm-regime" and HmmRegimeStrategy:
+        return HmmRegimeStrategy
+    elif strategy_name == "pairs-trading" and PairsTradingStrategy:
+        return PairsTradingStrategy
+    elif (strategy_name == "ml-regime" and not MLRegimeStrategy) or \
+         (strategy_name == "hmm-regime" and not HmmRegimeStrategy) or \
+         (strategy_name == "pairs-trading" and not PairsTradingStrategy):
+        raise ImportError(f"Could not import {strategy_name}. Is the private submodule available?")
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
@@ -85,6 +95,7 @@ def main():
     
     # Ensure standard column names (Open, High, Low, Close, Volume)
     data.columns = [col.capitalize() for col in data.columns]
+
     
     print("Data loaded successfully:")
     print(data.head())

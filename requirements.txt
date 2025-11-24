@@ -11,3 +11,5 @@ statsmodels
 matplotlib
 seaborn
 TA-Lib
+yfinance
+hmmlearn

@@ -28,11 +28,19 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 14. [completed] Create a private strategy in `strategies/private/` that uses a trained model.
 15. [completed] Backtest the ML-based strategy.
 
-## Phase 5: Live Execution & Safety
-16. [pending] Implement the `execution.py` module with safety checks.
-17. [pending] Integrate the execution module with the base strategy.
+## Phase 5: Advanced Strategy Development
+21. [completed] Acquire and document datasets for pairs trading (GLD/GDX).
+22. [completed] Implement and train a Hidden Markov Model (HMM) for regime detection.
+23. [completed] Implement a private HMM-based trading strategy.
+24. [completed] Backtest the HMM strategy.
+25. [completed] Implement a private Pairs Trading strategy.
+26. [completed] Backtest the Pairs Trading strategy.
 
-## Phase 6: System Finalization
-18. [pending] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
-19. [pending] Integrate the `Notifier` class for alerts.
-20. [pending] Complete all documentation.
+## Phase 6: Live Execution & Safety
+27. [pending] Implement the `execution.py` module with safety checks.
+28. [pending] Integrate the execution module with the base strategy.
+
+## Phase 7: System Finalization
+29. [pending] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
+30. [pending] Integrate the `Notifier` class for alerts.
+31. [pending] Complete all documentation.
