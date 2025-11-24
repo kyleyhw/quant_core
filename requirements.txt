@@ -8,3 +8,4 @@ scikit-learn
 python-dotenv
 requests
 tabulate
+statsmodels
