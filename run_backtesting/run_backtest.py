@@ -14,6 +14,10 @@ if project_root not in sys.path:
 from strategies.simple_ma_crossover import SimpleMACrossover
 from strategies.rsi_2_period import RSI2PeriodStrategy
 from strategies.bollinger_bands import BollingerBandsStrategy
+try:
+    from strategies.private.regime_based_strategy import MLRegimeStrategy
+except ImportError:
+    MLRegimeStrategy = None
 
 def get_strategy_class(strategy_name: str):
     """
@@ -25,6 +29,10 @@ def get_strategy_class(strategy_name: str):
         return RSI2PeriodStrategy
     elif strategy_name == "bollinger-bands":
         return BollingerBandsStrategy
+    elif strategy_name == "ml-regime" and MLRegimeStrategy:
+        return MLRegimeStrategy
+    elif strategy_name == "ml-regime" and not MLRegimeStrategy:
+        raise ImportError("Could not import MLRegimeStrategy. Is the private submodule available?")
     else:
         raise ValueError(f"Unknown strategy: {strategy_name}")
 
