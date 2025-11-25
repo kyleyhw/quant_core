@@ -14,13 +14,31 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from src.commission_models import ibkr_tiered_commission
+import pandas as pd
+from backtesting import Backtest, Strategy
+import os
+import sys
+import argparse
+import importlib
+import inspect
+from datetime import datetime
+from pathlib import Path
+
+# --- Add project root to path ---
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from src.commission_models import ibkr_tiered_commission
 from strategies.base_strategy import BaseStrategy
 
 # --- Configuration for data and meta-strategies ---
 # This allows us to map specific data files to strategies by name
 # and define which meta-strategies should run with which underlying strategies.
 STRATEGY_CONFIG = {
-    "PairsTradingStrategy": {"data": "data/PEP_KO_daily_2010_2023_formatted.csv"},
+    "PairsTradingStrategy": {"data": "data/PEP_KO_2024_2025.csv"},
+    "PortfolioAllocationStrategy": {"data": "data/SPY_2024_2025.csv"},
+    "EnsembleSignalStrategy": {"data": "data/SPY_2024_2025.csv"},
     "MetaRegimeFilterStrategy": {
         "underlying": "SimpleMACrossover",
         "params": {"strategy_type": "trend"}
@@ -30,7 +48,7 @@ STRATEGY_CONFIG = {
         "params": {}
     }
 }
-DEFAULT_DATA = "data/SPY_1hour_1year.csv"
+DEFAULT_DATA = "data/SPY_2024_2025.csv"
 
 
 def discover_strategies():
@@ -104,7 +122,7 @@ def discover_strategies():
     return strategies["standalone"], linked_meta_strategies
 
 
-def run_benchmark(scope: str):
+def run_benchmark(scope: str, data_path: str = None):
     """Runs a benchmark for the specified scope of strategies."""
     results = []
     standalone_strategies, meta_strategies = discover_strategies()
@@ -126,35 +144,103 @@ def run_benchmark(scope: str):
         print(f"\n--- Benchmarking Strategy: {strategy_name} ---")
         
         # --- Load Data ---
+        target_data = data_path if data_path else config["data"]
+        
+        # Special handling for PairsStrategy if we are overriding with single-asset data like SPY
+        if "Pairs" in strategy_name and data_path and "SPY" in data_path:
+             print(f"Skipping data override for {strategy_name} (requires pair data). Using config default.")
+             target_data = config["data"]
+
         try:
-            data = pd.read_csv(config["data"])
+            # Read first few lines to check for multi-header
+            with open(target_data, 'r') as f:
+                header_line_1 = f.readline()
+                header_line_2 = f.readline()
+            
+            # Check if second line contains Tickers (common in yfinance multi-index)
+            if "Ticker" in header_line_2 or "Price" in header_line_1:
+                 # Load with multi-index header
+                 data = pd.read_csv(target_data, header=[0, 1], index_col=0)
+                 
+                 # Check if we have multiple tickers (Pairs Strategy)
+                 tickers = data.columns.get_level_values(1).unique().tolist()
+                 
+                 if len(tickers) >= 2 and "Pairs" in strategy_name:
+                     # Assume Ticker 1 is the primary asset (e.g., PEP) and Ticker 2 is the secondary (e.g., KO)
+                     # We need to sort them to be deterministic or use specific names if known
+                     # For PEP/KO, let's just pick the first one as primary.
+                     t1 = tickers[0]
+                     t2 = tickers[1]
+                     
+                     # Create a flat DataFrame for Backtesting.py using Ticker 1's OHLC
+                     flat_data = pd.DataFrame()
+                     flat_data['Open'] = data[('Open', t1)]
+                     flat_data['High'] = data[('High', t1)]
+                     flat_data['Low'] = data[('Low', t1)]
+                     flat_data['Close'] = data[('Close', t1)]
+                     flat_data['Volume'] = data[('Volume', t1)]
+                     
+                     # Add Close_1 and Close_2 for the strategy logic
+                     flat_data['Close_1'] = data[('Close', t1)]
+                     flat_data['Close_2'] = data[('Close', t2)]
+                     
+                     data = flat_data
+                 else:
+                     # Single asset (SPY) but with multi-index
+                     # Just take the first ticker found
+                     t1 = tickers[0]
+                     flat_data = pd.DataFrame()
+                     flat_data['Open'] = data[('Open', t1)]
+                     flat_data['High'] = data[('High', t1)]
+                     flat_data['Low'] = data[('Low', t1)]
+                     flat_data['Close'] = data[('Close', t1)]
+                     flat_data['Volume'] = data[('Volume', t1)]
+                     data = flat_data
+
+                 # Index is likely the Date (from read_csv index_col=0)
+                 data.index.name = 'date'
+                 
+                 # Convert to numeric
+                 data = data.apply(pd.to_numeric, errors='coerce')
+                 
+            else:
+                 data = pd.read_csv(target_data)
+
+            # Standardize column names to lowercase (Backtesting.py expects capitalized, but we do it later)
+            data.columns = [col.lower() for col in data.columns]
+            
             # Standardize date parsing and make timezone-naive
-            data['date'] = pd.to_datetime(data['date'], utc=True)
-            data = data.set_index('date')
+            if data.index.name == 'date' or 'date' in data.columns:
+                if 'date' in data.columns:
+                    data['date'] = pd.to_datetime(data['date'], utc=True)
+                    data = data.set_index('date')
+                else:
+                    data.index = pd.to_datetime(data.index, utc=True)
+            
             if isinstance(data.index, pd.DatetimeIndex):
                  data.index = data.index.tz_localize(None)
+            
+            # Drop any rows with missing values (crucial for backtesting)
+            data = data.dropna()
+                 
         except FileNotFoundError:
-            print(f"Warning: Data file not found at {config['data']}. Skipping {strategy_name}.")
+            print(f"Warning: Data file not found at {target_data}. Skipping {strategy_name}.")
             continue
         except Exception as e:
             print(f"Error loading data for {strategy_name}: {e}. Skipping.")
             continue
         
-        # Standardize column names
+        # Standardize column names for Backtesting.py (Capitalized)
         data.columns = [col.capitalize() for col in data.columns]
         
         # --- Handle Meta-Strategies ---
         if 'underlying' in config:
-            # Set the underlying strategy and other params on the class itself
             strategy_class.underlying_strategy = config['underlying']
             for param, value in config.get('params', {}).items():
                 setattr(strategy_class, param, value)
             
-            bt = Backtest(data, strategy_class, cash=100_000, commission=ibkr_tiered_commission)
-            stats = bt.run()
-        else:
-            bt = Backtest(data, strategy_class, cash=100_000, commission=ibkr_tiered_commission)
-            stats = bt.run()
+        bt = Backtest(data, strategy_class, cash=10000, commission=ibkr_tiered_commission)
+        stats = bt.run()
         
         key_metrics = {
             "Strategy": strategy_name,
@@ -188,7 +274,20 @@ def run_benchmark(scope: str):
     
     with open(report_path, "w") as f:
         f.write(f"# {scope.capitalize()} Strategy Benchmark Report\n\n")
-        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        
+        # Add Data Source Info
+        f.write(f"**Test Data Source:** `{data_path if data_path else 'Strategy Defaults'}`\n")
+        if data_path and os.path.exists(data_path):
+             try:
+                 df_meta = pd.read_csv(data_path)
+                 if 'date' in df_meta.columns:
+                     start_date = df_meta['date'].min()
+                     end_date = df_meta['date'].max()
+                     f.write(f"**Test Period:** {start_date} to {end_date}\n")
+             except:
+                 pass
+        f.write("\n")
         f.write(results_df.to_markdown(index=False))
         
     print(f"Benchmark report saved to {report_path}")
@@ -199,6 +298,9 @@ if __name__ == "__main__":
         '--scope', type=str, default='all', choices=['public', 'private', 'all'],
         help='The scope of strategies to benchmark.'
     )
+    parser.add_argument(
+        '--data', type=str, default=None,
+        help='Path to the data file to use for benchmarking (overrides config defaults).'
+    )
     args = parser.parse_args()
-    run_benchmark(scope=args.scope)
-
+    run_benchmark(scope=args.scope, data_path=args.data)

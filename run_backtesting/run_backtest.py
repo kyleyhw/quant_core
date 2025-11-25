@@ -99,6 +99,9 @@ def main():
 
     # Load the data
     data = pd.read_csv(args.data)
+    # Standardize column names to lowercase
+    data.columns = [col.lower() for col in data.columns]
+    
     # Convert 'date' column to datetime and set as index
     data['date'] = pd.to_datetime(data['date'], utc=True)
     data = data.set_index('date')
