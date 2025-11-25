@@ -36,11 +36,10 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 25. [completed] Implement a private Pairs Trading strategy.
 26. [completed] Backtest the Pairs Trading strategy.
 
-## Phase 6: Live Execution & Safety
-27. [pending] Implement the `execution.py` module with safety checks.
+## Phase 6: Safety & Infrastructure
+27. [completed] Implement the `execution.py` module with safety checks.
     - [completed] Hard limits (Max Shares, Max Dollar, Price Deviation).
-28. [pending] Integrate the execution module with the base strategy.
-29. [completed] Develop System Safety & Recovery Protocols.
+28. [completed] Develop System Safety & Recovery Protocols.
     - [completed] Define Crash Recovery steps (State reconciliation).
     - [completed] Implement Heartbeat/System Health monitoring (via `tools/supervisor.py`).
     - [completed] Create `docs/safety_and_recovery.md`.
@@ -50,3 +49,14 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 29. [completed] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
 30. [completed] Integrate the `Notifier` class for alerts.
 31. [completed] Complete all documentation.
+
+## Phase 8: Expanded Strategy Research (Planning)
+32. [pending] Brainstorm new strategy concepts (e.g., Sentiment Analysis, Statistical Arbitrage, Reinforcement Learning).
+33. [pending] Select candidates for implementation.
+34. [pending] Backtest and validate new strategies.
+
+## Phase 9: Paper Trading & Live Execution (Future)
+35. [pending] Integrate the execution module with the base strategy.
+36. [pending] Set up Paper Trading environment.
+37. [pending] Conduct "Dry Run" with live market data (no execution).
+38. [pending] Begin Paper Trading with small capital allocation.
