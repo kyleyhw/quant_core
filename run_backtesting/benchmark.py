@@ -130,103 +130,118 @@ def run_benchmark(scope: str, data_path: str = None):
     # Filter strategies based on the selected scope
     if scope == 'all':
         strategies_to_run = standalone_strategies + meta_strategies
-    elif scope == 'public':
-        strategies_to_run = [s for s in standalone_strategies if s['scope'] == 'public']
     elif scope == 'private':
         strategies_to_run = [s for s in standalone_strategies if s['scope'] == 'private'] + meta_strategies
     else:
         strategies_to_run = []
 
     # --- Data Loading & Asset Discovery ---
-    # We want to support:
-    # 1. Single file with one asset (e.g., SPY.csv)
-    # 2. Single file with multiple assets (e.g., TECH.csv with MultiIndex)
-    # 3. Default config data if no path provided (legacy mode)
-    
-    assets_map = {} # { 'Asset_Name': DataFrame }
+    assets_map = {} # { 'Asset_Name': {'data': DataFrame, 'source': str} }
     
     if data_path:
-        try:
-            # Read first few lines to check for multi-header
-            with open(data_path, 'r') as f:
-                header_line_1 = f.readline()
-                header_line_2 = f.readline()
+        # Check if data_path is a directory or file
+        if os.path.isdir(data_path):
+            print(f"Loading all CSV files from directory: {data_path}...")
+            import glob
+            csv_files = glob.glob(os.path.join(data_path, "*.csv"))
             
-            # Check for MultiIndex (Price/Ticker structure from yfinance)
-            if "Ticker" in header_line_2 or "Price" in header_line_1:
-                 print(f"Loading multi-asset data from {data_path}...")
-                 # Load with multi-index header
-                 full_data = pd.read_csv(data_path, header=[0, 1], index_col=0)
-                 full_data.index.name = 'date'
-                 
-                 # Extract tickers
-                 tickers = full_data.columns.get_level_values(1).unique().tolist()
-                 
-                 for ticker in tickers:
-                     # Extract single asset DF
-                     df = pd.DataFrame()
-                     df['Open'] = full_data[('Open', ticker)]
-                     df['High'] = full_data[('High', ticker)]
-                     df['Low'] = full_data[('Low', ticker)]
-                     df['Close'] = full_data[('Close', ticker)]
-                     df['Volume'] = full_data[('Volume', ticker)]
+            for file_path in csv_files:
+                try:
+                    df = pd.read_csv(file_path)
+                    # Infer asset name from filename (e.g., TSLA_2024_2025.csv -> TSLA)
+                    asset_name = Path(file_path).stem.split('_')[0]
+                    
+                    # Standardize columns
+                    df.columns = [col.capitalize() for col in df.columns]
+                    
+                    # Standardize Index
+                    if 'Date' in df.columns:
+                        df['Date'] = pd.to_datetime(df['Date'], utc=True)
+                        df.set_index('Date', inplace=True)
+                    elif 'date' in df.columns:
+                        df['date'] = pd.to_datetime(df['date'], utc=True)
+                        df.set_index('date', inplace=True)
+                        df.index.name = 'Date'
+                    
+                    if isinstance(df.index, pd.DatetimeIndex):
+                        df.index = df.index.tz_localize(None)
+                        
+                    assets_map[asset_name] = {'data': df, 'source': os.path.basename(file_path)}
+                    print(f"Loaded {asset_name} from {os.path.basename(file_path)}")
+                    
+                except Exception as e:
+                    print(f"Error loading {file_path}: {e}")
+                    
+        else:
+            # Single File Logic (Existing)
+            try:
+                # Read first few lines to check for multi-header
+                with open(data_path, 'r') as f:
+                    header_line_1 = f.readline()
+                    header_line_2 = f.readline()
+                
+                # Check for MultiIndex (Price/Ticker structure from yfinance)
+                if "Ticker" in header_line_2 or "Price" in header_line_1:
+                     print(f"Loading multi-asset data from {data_path}...")
+                     full_data = pd.read_csv(data_path, header=[0, 1], index_col=0)
+                     full_data.index.name = 'date'
                      
-                     # Clean and Format
-                     df = df.apply(pd.to_numeric, errors='coerce')
-                     df.dropna(inplace=True)
+                     tickers = full_data.columns.get_level_values(1).unique().tolist()
                      
-                     # Standardize Index
-                     if not isinstance(df.index, pd.DatetimeIndex):
-                         df.index = pd.to_datetime(df.index, utc=True)
+                     for ticker in tickers:
+                         df = pd.DataFrame()
+                         df['Open'] = full_data[('Open', ticker)]
+                         df['High'] = full_data[('High', ticker)]
+                         df['Low'] = full_data[('Low', ticker)]
+                         df['Close'] = full_data[('Close', ticker)]
+                         df['Volume'] = full_data[('Volume', ticker)]
+                         
+                         df = df.apply(pd.to_numeric, errors='coerce')
+                         df.dropna(inplace=True)
+                         
+                         if not isinstance(df.index, pd.DatetimeIndex):
+                             df.index = pd.to_datetime(df.index, utc=True)
+                         if isinstance(df.index, pd.DatetimeIndex):
+                             df.index = df.index.tz_localize(None)
+                             
+                         assets_map[ticker] = {'data': df, 'source': os.path.basename(data_path)}
+                else:
+                     # Single Asset File
+                     print(f"Loading single-asset data from {data_path}...")
+                     df = pd.read_csv(data_path)
+                     df.columns = [col.capitalize() for col in df.columns]
+                     
+                     if 'Date' in df.columns:
+                         df['Date'] = pd.to_datetime(df['Date'], utc=True)
+                         df.set_index('Date', inplace=True)
+                     elif 'date' in df.columns:
+                         df['date'] = pd.to_datetime(df['date'], utc=True)
+                         df.set_index('date', inplace=True)
+                         df.index.name = 'Date'
+                     
                      if isinstance(df.index, pd.DatetimeIndex):
                          df.index = df.index.tz_localize(None)
-                         
-                     assets_map[ticker] = df
-            else:
-                 # Single Asset File
-                 print(f"Loading single-asset data from {data_path}...")
-                 df = pd.read_csv(data_path)
-                 df.columns = [col.capitalize() for col in df.columns] # Ensure capitalized for now
-                 
-                 # Standardize Index
-                 if 'Date' in df.columns:
-                     df['Date'] = pd.to_datetime(df['Date'], utc=True)
-                     df.set_index('Date', inplace=True)
-                 elif 'date' in df.columns: # Handle lowercase
-                     df['date'] = pd.to_datetime(df['date'], utc=True)
-                     df.set_index('date', inplace=True)
-                     df.index.name = 'Date'
-                 
-                 if isinstance(df.index, pd.DatetimeIndex):
-                     df.index = df.index.tz_localize(None)
-                 
-                 # Infer asset name from filename
-                 asset_name = Path(data_path).stem.split('_')[0]
-                 assets_map[asset_name] = df
-                 
-        except Exception as e:
-            print(f"Critical Error loading data {data_path}: {e}")
-            return
+                     
+                     asset_name = Path(data_path).stem.split('_')[0]
+                     assets_map[asset_name] = {'data': df, 'source': os.path.basename(data_path)}
+                     
+            except Exception as e:
+                print(f"Critical Error loading data {data_path}: {e}")
+                return
     else:
-        # No override provided, use defaults (SPY)
-        # For this batch mode, we really prefer an override, but we'll support legacy
         print("No data override provided. Using default SPY data for all strategies.")
-        # Load default SPY to populate assets_map for iteration
-        # (Simplified for now, assuming SPY exists)
-        assets_map['SPY'] = None # Will trigger load inside loop if needed
-        
+        assets_map['SPY'] = {'data': None, 'source': 'Default Config'}
+
     # --- Benchmarking Loop ---
-    for asset_name, asset_data in assets_map.items():
+    for asset_name, asset_info in assets_map.items():
         print(f"\n>>> Processing Asset: {asset_name} <<<")
+        asset_data = asset_info['data']
         
         for config in strategies_to_run:
             strategy_name = config.get("report_name", config["name"])
             strategy_class = config["class"]
             
-            # Skip Pairs Strategy for single-asset iteration (unless we specifically handle it)
             if "Pairs" in strategy_name:
-                # Pairs requires 2 specific assets. Skipping in generic batch mode.
-                # Only run if we are in "default" mode (no data override) where it loads its own config
                 if data_path: 
                     print(f"Skipping {strategy_name} for {asset_name} (Requires specific pair data).")
                     continue
@@ -239,7 +254,7 @@ def run_benchmark(scope: str, data_path: str = None):
                 target_data = config["data"]
                 try:
                     data = pd.read_csv(target_data)
-                    # ... (minimal processing for legacy) ...
+                    data.columns = [col.capitalize() for col in data.columns]
                     data['Date'] = pd.to_datetime(data['Date'] if 'Date' in data.columns else data['date'], utc=True)
                     data.set_index('Date', inplace=True)
                     data.index = data.index.tz_localize(None)
@@ -266,7 +281,8 @@ def run_benchmark(scope: str, data_path: str = None):
                     "Sharpe Ratio": stats["Sharpe Ratio"],
                     "Max. Drawdown [%]": stats["Max. Drawdown [%]"],
                     "Win Rate [%]": stats["Win Rate [%]"],
-                    "# Trades": stats["# Trades"]
+                    "# Trades": stats["# Trades"],
+                    "Source": asset_info['source']
                 }
                 results.append(key_metrics)
                 print(f"   Finished: {strategy_name}")
@@ -308,14 +324,18 @@ def run_benchmark(scope: str, data_path: str = None):
         f.write("| **Meta-Strategies** | `DynamicSizing`, `MetaRegimeFilter` | N/A (Uses underlying logic) |\n")
         f.write("| **Technical** | `SimpleMACrossover`, `RSI2Period`, `BollingerBands` | N/A (Rule-based) |\n\n")
         
-        f.write("## Performance Metrics by Asset\n")
-        f.write(f"**Test Period:** {data_path if data_path else 'Default Configs'}\n\n")
+        f.write("## Performance Metrics by Asset\n\n")
         
         for asset in sorted(assets):
             f.write(f"### {asset}\n")
             asset_results = results_df[results_df['Asset'] == asset].sort_values(by="Sharpe Ratio", ascending=False).round(2)
-            # Remove the 'Asset' column since it's redundant in the table
-            asset_results = asset_results.drop(columns=['Asset'])
+            
+            # Get source for this asset (should be same for all rows of this asset)
+            source_file = asset_results['Source'].iloc[0]
+            f.write(f"**Test Data Source:** `{source_file}`\n\n")
+            
+            # Remove redundant columns
+            asset_results = asset_results.drop(columns=['Asset', 'Source'])
             f.write(asset_results.to_markdown(index=False))
             f.write("\n\n")
         

@@ -33,17 +33,39 @@ if __name__ == "__main__":
     if data.empty:
         print("Error: No data found.")
     else:
-        # Flatten columns if MultiIndex (Open, Ticker) -> (Open_Ticker) or just keep as is?
-        # The project expects: Date, Open, High, Low, Close, Volume (lowercase or capitalized)
-        # If multiple tickers, yf returns (Price, Ticker).
+        # Check if output is a directory or file
+        import os
+        from pathlib import Path
         
-        if len(args.tickers) > 1:
-            # For pairs, we might want to keep it as is or format it.
-            # The PairsTradingStrategy expects columns like 'Close_PEP', 'Close_KO' or just 'PEP', 'KO' for close prices?
-            # Let's check the pairs strategy data loading.
-            # It expects a CSV with columns.
-            # For now, just save it.
-            pass
+        output_path = Path(args.output)
+        
+        # If multiple tickers and output doesn't end in .csv, treat as directory
+        if len(args.tickers) > 1 and not args.output.lower().endswith('.csv'):
+            output_path.mkdir(parents=True, exist_ok=True)
+            print(f"Saving individual files to {output_path}...")
             
-        data.to_csv(args.output)
-        print(f"Data saved to {args.output}")
+            # yfinance returns MultiIndex (Price, Ticker) if multiple tickers
+            # We need to iterate and save each
+            if isinstance(data.columns, pd.MultiIndex):
+                tickers = data.columns.get_level_values(1).unique()
+                for ticker in tickers:
+                    # Extract single ticker data
+                    df = data.xs(ticker, axis=1, level=1)
+                    # Drop rows where all cols are NaN (if any)
+                    df = df.dropna(how='all')
+                    
+                    if not df.empty:
+                        # Construct filename: TICKER_START_END.csv
+                        filename = f"{ticker}_{args.start}_{args.end}.csv"
+                        file_path = output_path / filename
+                        df.to_csv(file_path)
+                        print(f"Saved {ticker} to {file_path}")
+            else:
+                # Should not happen if len(tickers) > 1, but fallback
+                print("Warning: Multiple tickers requested but single-index returned. Saving to generic file.")
+                data.to_csv(output_path / "downloaded_data.csv")
+                
+        else:
+            # Single file output (Aggregate or Single Ticker)
+            data.to_csv(args.output)
+            print(f"Data saved to {args.output}")
