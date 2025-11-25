@@ -44,6 +44,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
     - [completed] Define Crash Recovery steps (State reconciliation).
     - [completed] Implement Heartbeat/System Health monitoring (via `tools/supervisor.py`).
     - [completed] Create `docs/safety_and_recovery.md`.
+    - [pending] (Future) Implement External Heartbeat (Dead Man's Switch) for Supervisor monitoring.
 
 ## Phase 7: System Finalization
 29. [pending] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
