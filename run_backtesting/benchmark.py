@@ -96,6 +96,18 @@ def discover_strategies():
                             strategies["meta"][name] = config
                         else:
                             strategies["standalone"].append(config)
+                            
+                            # Create "Hold" variants for Regime strategies
+                            if name in ["MLRegimeStrategy", "HmmRegimeStrategy", "MetaRegimeFilterStrategy"]:
+                                config_hold = config.copy()
+                                config_hold["name"] = f"{name}_Hold"
+                                config_hold["report_name"] = f"{name} (Hold Sideways)"
+                                if name == "MetaRegimeFilterStrategy":
+                                     config_hold["params"] = {"hold_during_unfavorable": True}
+                                else:
+                                     config_hold["params"] = {"hold_during_sideways": True}
+                                strategies["standalone"].append(config_hold)
+
             except ImportError as e:
                 print(f"Error importing module {module_name}: {e}")
 
@@ -268,8 +280,10 @@ def run_benchmark(scope: str, data_path: str = None):
                 # Handle Meta-Strategies
                 if 'underlying' in config:
                     strategy_class.underlying_strategy = config['underlying']
-                    for param, value in config.get('params', {}).items():
-                        setattr(strategy_class, param, value)
+                
+                # Apply parameters (for both Meta and Standalone variants)
+                for param, value in config.get('params', {}).items():
+                    setattr(strategy_class, param, value)
                 
                 bt = Backtest(data, strategy_class, cash=10000, commission=ibkr_tiered_commission)
                 stats = bt.run()

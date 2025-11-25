@@ -42,3 +42,8 @@ Documentation: Docstrings should focus on "Why" this exists, not just "What" it 
 Backtesting: When creating a backtest, assume 0.005 (0.5%) commission/slippage to remain realistic.
 
 Benchmarking: When comparing strategies, use Sharpe Ratio as the primary metric, not total return.
+
+* **Git Sync**: At each new session, ensure that the local repository is up to date with remote. Also git push to remote after each significant change when working on projects. Err on the side of over-committing rather than under-committing if unsure. When git pushing, write appropriate, specific, and useful commit messages.
+    *   **CRITICAL**: Always sync **BOTH** the main repository (`ibkr_quant_core`) AND the private submodule (`strategies/private`).
+    *   `git push origin master` (Main)
+    *   `cd strategies/private; git push origin main` (Submodule)

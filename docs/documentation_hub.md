@@ -25,5 +25,5 @@ This documentation provides a detailed overview of the ibkr open-core algorithmi
 -   **[interpreting report](./interpreting_report.md)**
     -   provides detailed explanations of the various performance metrics found in backtest reports.
 
--   **[financial glossary](./finance_glossary.md)**
+-   **[financial glossary](./financial_glossary.md)**
     -   definitions for common financial terms.
