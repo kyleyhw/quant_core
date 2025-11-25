@@ -47,6 +47,6 @@ This document outlines the planned phases and tasks for developing the IBKR Open
     - [pending] (Future) Implement External Heartbeat (Dead Man's Switch) for Supervisor monitoring.
 
 ## Phase 7: System Finalization
-29. [pending] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
-30. [pending] Integrate the `Notifier` class for alerts.
-31. [pending] Complete all documentation.
+29. [completed] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
+30. [completed] Integrate the `Notifier` class for alerts.
+31. [completed] Complete all documentation.
