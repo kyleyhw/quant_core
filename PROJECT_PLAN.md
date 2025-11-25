@@ -38,7 +38,12 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 
 ## Phase 6: Live Execution & Safety
 27. [pending] Implement the `execution.py` module with safety checks.
+    - [completed] Hard limits (Max Shares, Max Dollar, Price Deviation).
 28. [pending] Integrate the execution module with the base strategy.
+29. [pending] Develop System Safety & Recovery Protocols.
+    - [ ] Define Crash Recovery steps (State reconciliation).
+    - [ ] Implement Heartbeat/System Health monitoring.
+    - [ ] Create `docs/safety_and_recovery.md`.
 
 ## Phase 7: System Finalization
 29. [pending] Implement the strategy benchmarking script `run_backtesting/benchmark.py`.
