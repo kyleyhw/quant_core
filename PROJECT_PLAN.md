@@ -42,7 +42,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 28. [pending] Integrate the execution module with the base strategy.
 29. [completed] Develop System Safety & Recovery Protocols.
     - [completed] Define Crash Recovery steps (State reconciliation).
-    - [completed] Implement Heartbeat/System Health monitoring (via `tools/monitor.py`).
+    - [completed] Implement Heartbeat/System Health monitoring (via `tools/supervisor.py`).
     - [completed] Create `docs/safety_and_recovery.md`.
 
 ## Phase 7: System Finalization

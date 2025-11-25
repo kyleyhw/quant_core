@@ -64,12 +64,12 @@ To ensure the bot is running:
 - **Logs**: Check `logs/trading.log` for recent activity (timestamps within the last minute).
 - **Notifications**: The bot sends a "Startup" message on launch and a "Daily Summary" at market close.
 
-### Automated Process Monitor
-We provide a supervisor script `tools/monitor.py` that launches the bot and watches for crashes.
+### Automated Process Supervisor
+We provide a supervisor script `tools/supervisor.py` that launches the bot and watches for crashes.
 
 **Usage:**
 ```bash
-python tools/monitor.py python your_script.py
+python tools/supervisor.py python your_script.py
 ```
 
 **Features:**
@@ -77,3 +77,11 @@ python tools/monitor.py python your_script.py
 - Sends an **INFO** notification on startup and normal exit.
 - Sends a **CRITICAL** notification if the process crashes (non-zero exit code).
 - Handles `Ctrl+C` to gracefully terminate the child process.
+
+### "Who Watches the Watchmen?" (Monitoring the Supervisor)
+If `supervisor.py` itself crashes (e.g., server power loss), it cannot send an alert. To mitigate this:
+
+1.  **External Heartbeat (Dead Man's Switch)**: Use a service like [Healthchecks.io](https://healthchecks.io) or [Dead Man's Snitch](https://deadmanssnitch.com). Configure the bot to send a "ping" (HTTP request) every minute. If the service stops receiving pings, *it* emails/alerts you.
+2.  **OS-Level Restart**:
+    -   **Windows**: Use **Task Scheduler** to run the supervisor on startup and restart it if it fails.
+    -   **Linux**: Use `systemd` with `Restart=always`.
