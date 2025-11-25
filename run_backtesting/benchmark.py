@@ -281,6 +281,12 @@ def run_benchmark(scope: str, data_path: str = None):
                 if 'underlying' in config:
                     strategy_class.underlying_strategy = config['underlying']
                 
+                # Reset specific parameters to defaults to prevent pollution across runs
+                if hasattr(strategy_class, 'hold_during_sideways'):
+                    strategy_class.hold_during_sideways = False
+                if hasattr(strategy_class, 'hold_during_unfavorable'):
+                    strategy_class.hold_during_unfavorable = False
+
                 # Apply parameters (for both Meta and Standalone variants)
                 for param, value in config.get('params', {}).items():
                     setattr(strategy_class, param, value)
