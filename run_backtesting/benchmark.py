@@ -123,7 +123,7 @@ def discover_strategies():
 
 
 def run_benchmark(scope: str, data_path: str = None):
-    """Runs a benchmark for the specified scope of strategies."""
+    """Runs a benchmark for the specified scope of strategies across provided data."""
     results = []
     standalone_strategies, meta_strategies = discover_strategies()
 
@@ -137,158 +137,187 @@ def run_benchmark(scope: str, data_path: str = None):
     else:
         strategies_to_run = []
 
-    for config in strategies_to_run:
-        strategy_name = config.get("report_name", config["name"])
-        strategy_class = config["class"]
-        
-        print(f"\n--- Benchmarking Strategy: {strategy_name} ---")
-        
-        # --- Load Data ---
-        target_data = data_path if data_path else config["data"]
-        
-        # Special handling for PairsStrategy if we are overriding with single-asset data like SPY
-        if "Pairs" in strategy_name and data_path and "SPY" in data_path:
-             print(f"Skipping data override for {strategy_name} (requires pair data). Using config default.")
-             target_data = config["data"]
-
+    # --- Data Loading & Asset Discovery ---
+    # We want to support:
+    # 1. Single file with one asset (e.g., SPY.csv)
+    # 2. Single file with multiple assets (e.g., TECH.csv with MultiIndex)
+    # 3. Default config data if no path provided (legacy mode)
+    
+    assets_map = {} # { 'Asset_Name': DataFrame }
+    
+    if data_path:
         try:
             # Read first few lines to check for multi-header
-            with open(target_data, 'r') as f:
+            with open(data_path, 'r') as f:
                 header_line_1 = f.readline()
                 header_line_2 = f.readline()
             
-            # Check if second line contains Tickers (common in yfinance multi-index)
+            # Check for MultiIndex (Price/Ticker structure from yfinance)
             if "Ticker" in header_line_2 or "Price" in header_line_1:
+                 print(f"Loading multi-asset data from {data_path}...")
                  # Load with multi-index header
-                 data = pd.read_csv(target_data, header=[0, 1], index_col=0)
+                 full_data = pd.read_csv(data_path, header=[0, 1], index_col=0)
+                 full_data.index.name = 'date'
                  
-                 # Check if we have multiple tickers (Pairs Strategy)
-                 tickers = data.columns.get_level_values(1).unique().tolist()
+                 # Extract tickers
+                 tickers = full_data.columns.get_level_values(1).unique().tolist()
                  
-                 if len(tickers) >= 2 and "Pairs" in strategy_name:
-                     # Assume Ticker 1 is the primary asset (e.g., PEP) and Ticker 2 is the secondary (e.g., KO)
-                     # We need to sort them to be deterministic or use specific names if known
-                     # For PEP/KO, let's just pick the first one as primary.
-                     t1 = tickers[0]
-                     t2 = tickers[1]
+                 for ticker in tickers:
+                     # Extract single asset DF
+                     df = pd.DataFrame()
+                     df['Open'] = full_data[('Open', ticker)]
+                     df['High'] = full_data[('High', ticker)]
+                     df['Low'] = full_data[('Low', ticker)]
+                     df['Close'] = full_data[('Close', ticker)]
+                     df['Volume'] = full_data[('Volume', ticker)]
                      
-                     # Create a flat DataFrame for Backtesting.py using Ticker 1's OHLC
-                     flat_data = pd.DataFrame()
-                     flat_data['Open'] = data[('Open', t1)]
-                     flat_data['High'] = data[('High', t1)]
-                     flat_data['Low'] = data[('Low', t1)]
-                     flat_data['Close'] = data[('Close', t1)]
-                     flat_data['Volume'] = data[('Volume', t1)]
+                     # Clean and Format
+                     df = df.apply(pd.to_numeric, errors='coerce')
+                     df.dropna(inplace=True)
                      
-                     # Add Close_1 and Close_2 for the strategy logic
-                     flat_data['Close_1'] = data[('Close', t1)]
-                     flat_data['Close_2'] = data[('Close', t2)]
-                     
-                     data = flat_data
-                 else:
-                     # Single asset (SPY) but with multi-index
-                     # Just take the first ticker found
-                     t1 = tickers[0]
-                     flat_data = pd.DataFrame()
-                     flat_data['Open'] = data[('Open', t1)]
-                     flat_data['High'] = data[('High', t1)]
-                     flat_data['Low'] = data[('Low', t1)]
-                     flat_data['Close'] = data[('Close', t1)]
-                     flat_data['Volume'] = data[('Volume', t1)]
-                     data = flat_data
-
-                 # Index is likely the Date (from read_csv index_col=0)
-                 data.index.name = 'date'
-                 
-                 # Convert to numeric
-                 data = data.apply(pd.to_numeric, errors='coerce')
-                 
+                     # Standardize Index
+                     if not isinstance(df.index, pd.DatetimeIndex):
+                         df.index = pd.to_datetime(df.index, utc=True)
+                     if isinstance(df.index, pd.DatetimeIndex):
+                         df.index = df.index.tz_localize(None)
+                         
+                     assets_map[ticker] = df
             else:
-                 data = pd.read_csv(target_data)
-
-            # Standardize column names to lowercase (Backtesting.py expects capitalized, but we do it later)
-            data.columns = [col.lower() for col in data.columns]
-            
-            # Standardize date parsing and make timezone-naive
-            if data.index.name == 'date' or 'date' in data.columns:
-                if 'date' in data.columns:
-                    data['date'] = pd.to_datetime(data['date'], utc=True)
-                    data = data.set_index('date')
-                else:
-                    data.index = pd.to_datetime(data.index, utc=True)
-            
-            if isinstance(data.index, pd.DatetimeIndex):
-                 data.index = data.index.tz_localize(None)
-            
-            # Drop any rows with missing values (crucial for backtesting)
-            data = data.dropna()
+                 # Single Asset File
+                 print(f"Loading single-asset data from {data_path}...")
+                 df = pd.read_csv(data_path)
+                 df.columns = [col.capitalize() for col in df.columns] # Ensure capitalized for now
                  
-        except FileNotFoundError:
-            print(f"Warning: Data file not found at {target_data}. Skipping {strategy_name}.")
-            continue
+                 # Standardize Index
+                 if 'Date' in df.columns:
+                     df['Date'] = pd.to_datetime(df['Date'], utc=True)
+                     df.set_index('Date', inplace=True)
+                 elif 'date' in df.columns: # Handle lowercase
+                     df['date'] = pd.to_datetime(df['date'], utc=True)
+                     df.set_index('date', inplace=True)
+                     df.index.name = 'Date'
+                 
+                 if isinstance(df.index, pd.DatetimeIndex):
+                     df.index = df.index.tz_localize(None)
+                 
+                 # Infer asset name from filename
+                 asset_name = Path(data_path).stem.split('_')[0]
+                 assets_map[asset_name] = df
+                 
         except Exception as e:
-            print(f"Error loading data for {strategy_name}: {e}. Skipping.")
-            continue
+            print(f"Critical Error loading data {data_path}: {e}")
+            return
+    else:
+        # No override provided, use defaults (SPY)
+        # For this batch mode, we really prefer an override, but we'll support legacy
+        print("No data override provided. Using default SPY data for all strategies.")
+        # Load default SPY to populate assets_map for iteration
+        # (Simplified for now, assuming SPY exists)
+        assets_map['SPY'] = None # Will trigger load inside loop if needed
         
-        # Standardize column names for Backtesting.py (Capitalized)
-        data.columns = [col.capitalize() for col in data.columns]
+    # --- Benchmarking Loop ---
+    for asset_name, asset_data in assets_map.items():
+        print(f"\n>>> Processing Asset: {asset_name} <<<")
         
-        # --- Handle Meta-Strategies ---
-        if 'underlying' in config:
-            strategy_class.underlying_strategy = config['underlying']
-            for param, value in config.get('params', {}).items():
-                setattr(strategy_class, param, value)
+        for config in strategies_to_run:
+            strategy_name = config.get("report_name", config["name"])
+            strategy_class = config["class"]
             
-        bt = Backtest(data, strategy_class, cash=10000, commission=ibkr_tiered_commission)
-        stats = bt.run()
-        
-        key_metrics = {
-            "Strategy": strategy_name,
-            "Return [%]": stats["Return [%]"],
-            "Sharpe Ratio": stats["Sharpe Ratio"],
-            "Max. Drawdown [%]": stats["Max. Drawdown [%]"],
-            "Win Rate [%]": stats["Win Rate [%]"],
-            "# Trades": stats["# Trades"]
-        }
-        results.append(key_metrics)
-        print(f"--- Finished: {strategy_name} ---")
+            # Skip Pairs Strategy for single-asset iteration (unless we specifically handle it)
+            if "Pairs" in strategy_name:
+                # Pairs requires 2 specific assets. Skipping in generic batch mode.
+                # Only run if we are in "default" mode (no data override) where it loads its own config
+                if data_path: 
+                    print(f"Skipping {strategy_name} for {asset_name} (Requires specific pair data).")
+                    continue
 
+            # Prepare Data
+            if asset_data is not None:
+                data = asset_data.copy()
+            else:
+                # Legacy/Default load
+                target_data = config["data"]
+                try:
+                    data = pd.read_csv(target_data)
+                    # ... (minimal processing for legacy) ...
+                    data['Date'] = pd.to_datetime(data['Date'] if 'Date' in data.columns else data['date'], utc=True)
+                    data.set_index('Date', inplace=True)
+                    data.index = data.index.tz_localize(None)
+                except:
+                    continue
+
+            # Standardize columns for Backtesting.py
+            data.columns = [col.capitalize() for col in data.columns]
+            
+            try:
+                # Handle Meta-Strategies
+                if 'underlying' in config:
+                    strategy_class.underlying_strategy = config['underlying']
+                    for param, value in config.get('params', {}).items():
+                        setattr(strategy_class, param, value)
+                
+                bt = Backtest(data, strategy_class, cash=10000, commission=ibkr_tiered_commission)
+                stats = bt.run()
+                
+                key_metrics = {
+                    "Asset": asset_name,
+                    "Strategy": strategy_name,
+                    "Return [%]": stats["Return [%]"],
+                    "Sharpe Ratio": stats["Sharpe Ratio"],
+                    "Max. Drawdown [%]": stats["Max. Drawdown [%]"],
+                    "Win Rate [%]": stats["Win Rate [%]"],
+                    "# Trades": stats["# Trades"]
+                }
+                results.append(key_metrics)
+                print(f"   Finished: {strategy_name}")
+                
+            except Exception as e:
+                print(f"   Error running {strategy_name} on {asset_name}: {e}")
+
+    # --- Report Generation ---
     if not results:
-        print(f"No strategies found for scope '{scope}'. No report generated.")
+        print("No results generated.")
         return
-        
-    print(f"\n--- Generating {scope.capitalize()} Benchmark Report ---")
-    results_df = pd.DataFrame(results).sort_values(by="Sharpe Ratio", ascending=False).round(2)
+
+    print(f"\n--- Generating Consolidated Benchmark Report ---")
     
-    # Determine output directory
+    # Group results by Asset
+    results_df = pd.DataFrame(results)
+    assets = results_df['Asset'].unique()
+    
     output_dir = 'reports'
     if scope == 'private' or (scope == 'all' and any(s['scope'] == 'private' for s in strategies_to_run)):
         private_reports_dir = os.path.join('strategies', 'private', 'reports')
         if os.path.exists(os.path.dirname(private_reports_dir)):
              output_dir = private_reports_dir
-    
     os.makedirs(output_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    report_path = os.path.join(output_dir, f"benchmark_report_{scope}_{timestamp}.md")
+    report_path = os.path.join(output_dir, f"benchmark_report_multi_asset_{timestamp}.md")
     
     with open(report_path, "w") as f:
-        f.write(f"# {scope.capitalize()} Strategy Benchmark Report\n\n")
-        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"# Multi-Asset Strategy Benchmark Report\n\n")
+        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
-        # Add Data Source Info
-        f.write(f"**Test Data Source:** `{data_path if data_path else 'Strategy Defaults'}`\n")
-        if data_path and os.path.exists(data_path):
-             try:
-                 df_meta = pd.read_csv(data_path)
-                 if 'date' in df_meta.columns:
-                     start_date = df_meta['date'].min()
-                     end_date = df_meta['date'].max()
-                     f.write(f"**Test Period:** {start_date} to {end_date}\n")
-             except:
-                 pass
-        f.write("\n")
-        f.write(results_df.to_markdown(index=False))
+        # --- Strategy Summary & Training Data ---
+        f.write("## Strategy Summary & Training Data\n")
+        f.write("| Strategy Type | Strategies | Training Data Source |\n")
+        f.write("| :--- | :--- | :--- |\n")
+        f.write("| **Baseline** | `BuyAndHoldStrategy` | N/A |\n")
+        f.write("| **Machine Learning** | `MLRegimeStrategy`, `EnsembleSignalStrategy` | **SPY (2010-2023)** |\n")
+        f.write("| **Meta-Strategies** | `DynamicSizing`, `MetaRegimeFilter` | N/A (Uses underlying logic) |\n")
+        f.write("| **Technical** | `SimpleMACrossover`, `RSI2Period`, `BollingerBands` | N/A (Rule-based) |\n\n")
+        
+        f.write("## Performance Metrics by Asset\n")
+        f.write(f"**Test Period:** {data_path if data_path else 'Default Configs'}\n\n")
+        
+        for asset in sorted(assets):
+            f.write(f"### {asset}\n")
+            asset_results = results_df[results_df['Asset'] == asset].sort_values(by="Sharpe Ratio", ascending=False).round(2)
+            # Remove the 'Asset' column since it's redundant in the table
+            asset_results = asset_results.drop(columns=['Asset'])
+            f.write(asset_results.to_markdown(index=False))
+            f.write("\n\n")
         
     print(f"Benchmark report saved to {report_path}")
 

@@ -10,6 +10,9 @@ This documentation provides a detailed overview of the ibkr open-core algorithmi
 -   **[core infrastructure](./core_infrastructure.md)**
     -   explains the foundational modules for connecting to interactive brokers, loading data, and sending notifications.
 
+-   **[feature engineering](./feature_engineering.md)**
+    -   technical indicator definitions and usage.
+
 -   **[strategy development](./strategy_development.md)**
     -   details the base strategy class, risk management framework, and the implementation of a simple example strategy.
         *   **[simple ma crossover](./strategies/simple_ma_crossover.md)**: mathematical formulation for the simple ma crossover strategy.
