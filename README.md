@@ -13,8 +13,9 @@ The system leverages the following key technologies:
 *   **Broker API:** `ib_insync` (a Pythonic wrapper for the native IB API)
 *   **Data/Analysis:** `pandas`, `numpy`, `pandas-ta` (for technical indicators)
 *   **Backtesting:** `backtesting.py` (for strategy simulation and evaluation)
-*   **Machine Learning:** `xgboost`, `scikit-learn`
+*   **Machine Learning:** `xgboost`, `scikit-learn` (Regime Detection, Signal Ensembling)
 *   **Operations:** `python-dotenv` (for secure handling of secrets), `requests` (for notifications via Discord/Telegram webhooks)
+*   **Multi-Asset Support:** Robust handling of multiple tickers (e.g., TSLA, NVDA) with regime-aware logic.
 
 ## Project Plan
 
