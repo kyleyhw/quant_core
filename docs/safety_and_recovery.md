@@ -63,4 +63,17 @@ If the bot crashes, loses power, or is terminated unexpectedly:
 To ensure the bot is running:
 - **Logs**: Check `logs/trading.log` for recent activity (timestamps within the last minute).
 - **Notifications**: The bot sends a "Startup" message on launch and a "Daily Summary" at market close.
-- **External Monitor (Recommended)**: Use a process manager like `systemd` (Linux) or a separate script to ping the bot process. If the process ID (PID) disappears, trigger an alert.
+
+### Automated Process Monitor
+We provide a supervisor script `tools/monitor.py` that launches the bot and watches for crashes.
+
+**Usage:**
+```bash
+python tools/monitor.py python your_script.py
+```
+
+**Features:**
+- Launches the target script as a subprocess.
+- Sends an **INFO** notification on startup and normal exit.
+- Sends a **CRITICAL** notification if the process crashes (non-zero exit code).
+- Handles `Ctrl+C` to gracefully terminate the child process.
