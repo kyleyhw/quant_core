@@ -29,16 +29,21 @@ class SignalExecutor(Strategy):
 
     def next(self):
         signal = self.strategy.next()
+        if signal:
+            print(f"DEBUG: Bar {len(self.data)}, Signal: {signal}, Position: {self.position.size}")
+
         if signal == 'buy':
             if self.position.is_short:
                 self.position.close()
             if not self.position.is_long:
                 self.buy()
+                print("DEBUG: Executed BUY")
         elif signal == 'sell':
             if self.position.is_long:
                 self.position.close()
             if not self.position.is_short:
                 self.sell()
+                print("DEBUG: Executed SELL")
 
 def discover_strategies() -> dict:
     """Dynamically discovers and imports all available strategies."""

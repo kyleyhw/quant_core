@@ -54,14 +54,13 @@ class SimpleMACrossover(BaseStrategy):
         cross_down = (fast_ma_prev >= slow_ma_prev and fast_ma_val < slow_ma_val)
 
         # --- Entry Signal ---
+        # --- Entry Signal ---
         if cross_up:
-            if not self.position:
-                return "buy"
+            return "buy"
         
         # --- Exit Signal ---
         elif cross_down:
-            if self.position:
-                return "sell"
+            return "sell"
 
         return None
 
