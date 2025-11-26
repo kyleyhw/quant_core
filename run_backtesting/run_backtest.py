@@ -29,21 +29,16 @@ class SignalExecutor(Strategy):
 
     def next(self):
         signal = self.strategy.next()
-        if signal:
-            print(f"DEBUG: Bar {len(self.data)}, Signal: {signal}, Position: {self.position.size}")
-
         if signal == 'buy':
             if self.position.is_short:
                 self.position.close()
             if not self.position.is_long:
                 self.buy()
-                print("DEBUG: Executed BUY")
         elif signal == 'sell':
             if self.position.is_long:
                 self.position.close()
             if not self.position.is_short:
                 self.sell()
-                print("DEBUG: Executed SELL")
 
 def discover_strategies() -> dict:
     """Dynamically discovers and imports all available strategies."""
@@ -151,16 +146,26 @@ def main():
 
     # Standardize column names (Open, High, Low, Close, Volume) to capitalize for Backtesting.py
     data.columns = [col.capitalize() for col in data.columns]
+
+    # Special handling for PairsTradingStrategy
+    if args.strategy == 'PairsTradingStrategy':
+        # Map Asset 1 columns to standard OHLCV (Copy them so original names remain)
+        data['Open'] = data['Open_1']
+        data['High'] = data['High_1']
+        data['Low'] = data['Low_1']
+        data['Close'] = data['Close_1']
+        data['Volume'] = data['Volume_1']
     
     # Ensure standard columns exist (Open, High, Low, Close, Volume) - Backtesting.py requirement
     required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    if not all(col in data.columns for col in required_cols):
+    if args.strategy != 'PairsTradingStrategy' and not all(col in data.columns for col in required_cols):
         print(f"Error: Missing required columns for Backtesting.py: {set(required_cols) - set(data.columns)}")
         return
 
     # Explicitly convert to numeric, coercing errors will turn non-numeric into NaN
-    for col in required_cols:
-        data[col] = pd.to_numeric(data[col], errors='coerce')
+    if args.strategy != 'PairsTradingStrategy':
+        for col in required_cols:
+            data[col] = pd.to_numeric(data[col], errors='coerce')
 
     data.dropna(inplace=True) # Drop any rows with NaN values
 
@@ -279,4 +284,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

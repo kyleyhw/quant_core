@@ -1,6 +1,6 @@
 # Backtest Report: BollingerBandsStrategy
 
-**Run Date:** 2025-11-26 20:45:34
+**Run Date:** 2025-11-26 21:12:50
 
 ## Data Configuration
 - **Data Source:** `data/benchmark/SPY_2024-10-01_2025-11-25.csv`
@@ -46,7 +46,7 @@
 | Kelly Criterion        | -1.2290842899790047 |
 
 ## Equity Curve
-[View interactive plot](backtest_BollingerBandsStrategy_20251126_204533.html)
+[View interactive plot](backtest_BollingerBandsStrategy_20251126_211249.html)
 
 ## Trade Log
 |    |   Size |   EntryBar |   ExitBar |   EntryPrice |   ExitPrice |      SL | TP   |       PnL |   Commission |   ReturnPct | EntryTime        | ExitTime         | Duration        | Tag   |

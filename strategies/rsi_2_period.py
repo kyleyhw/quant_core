@@ -72,13 +72,11 @@ class RSI2PeriodStrategy(BaseStrategy):
 
         # --- Entry Signal (Buy when RSI crosses below oversold) ---
         if cross_below_oversold:
-            if not self.position:
-                return "buy"
+            return "buy"
         
         # --- Exit Signal (Sell when RSI crosses above overbought) ---
         elif cross_above_overbought:
-            if self.position:
-                return "sell"
+            return "sell"
 
         return None
 
