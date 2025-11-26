@@ -3,7 +3,7 @@ This module contains functions that model various broker commission structures
 for use in the backtesting engine.
 """
 
-def ibkr_tiered_commission(quantity: int, price: float) -> float:
+def ibkr_tiered_commission(quantity: float, price: float) -> float:
     """
     Calculates trade commission based on the Interactive Brokers (IBKR) Pro
     Tiered pricing structure for US stocks.
@@ -36,3 +36,11 @@ def ibkr_tiered_commission(quantity: int, price: float) -> float:
     commission = max(commission, MINIMUM_PER_ORDER)
     
     return commission
+
+# --- Commission Model Registry ---
+COMMISSION_MODELS = {
+    "IBKR Tiered": ibkr_tiered_commission,
+    "Fixed 0.1%": 0.001,
+    "Fixed 0.5%": 0.005,
+    "Zero Commission": 0.0
+}
