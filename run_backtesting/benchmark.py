@@ -384,9 +384,9 @@ def run_benchmark(scope: str, data_path: str = None):
     results_df = pd.DataFrame(results)
     assets = results_df['Asset'].unique()
     
-    output_dir = 'reports'
+    output_dir = 'strategies/reports'
     if scope == 'private' or (scope == 'all' and any(s['scope'] == 'private' for s in strategies_to_run)):
-        private_reports_dir = os.path.join('strategies_private', 'private_strategies', 'reports')
+        private_reports_dir = os.path.join('strategies_private', 'reports')
         if os.path.exists(os.path.dirname(private_reports_dir)):
              output_dir = private_reports_dir
     os.makedirs(output_dir, exist_ok=True)

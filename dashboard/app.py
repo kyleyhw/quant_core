@@ -14,26 +14,32 @@ if project_root not in sys.path:
 from dashboard import utils
 from src.commission_models import ibkr_tiered_commission
 
-# --- Signal Executor Wrapper ---
-class SignalExecutor(Strategy):
-    underlying_strategy = None
-    def init(self):
-        if not self.underlying_strategy:
-            raise ValueError("SignalExecutor requires an `underlying_strategy` to be set.")
-        self.strategy = self.underlying_strategy(self._broker, self.data, self._params)
-        self.strategy.init()
-    def next(self):
-        signal = self.strategy.next()
-        if signal == 'buy':
-            if self.position.is_short:
-                self.position.close()
-            if not self.position.is_long:
-                self.buy()
-        elif signal == 'sell':
-            if self.position.is_long:
-                self.position.close()
-            if not self.position.is_short:
-                self.sell()
+# --- Signal Executor Factory ---
+def create_signal_executor(base_strategy_class):
+    """
+    Creates a dynamic subclass of the given strategy class that interprets
+    'buy'/'sell' return values from .next() as trade execution commands.
+    """
+    class SignalExecutor(base_strategy_class):
+        def next(self):
+            # Call the underlying strategy's next method
+            signal = super().next()
+            
+            if signal == 'buy':
+                if self.position.is_short:
+                    self.position.close()
+                if not self.position.is_long:
+                    self.buy()
+            elif signal == 'sell':
+                if self.position.is_long:
+                    self.position.close()
+                if not self.position.is_short:
+                    self.sell()
+    
+    # Copy name and docstring for clarity
+    SignalExecutor.__name__ = f"Executable{base_strategy_class.__name__}"
+    SignalExecutor.__doc__ = base_strategy_class.__doc__
+    return SignalExecutor
 
 # --- Auto-Download Data on First Run ---
 BENCHMARK_DATA_DIR = os.path.join(project_root, "data", "benchmark")
@@ -74,6 +80,9 @@ st.title("Algorithmic Trading Dashboard")
 st.sidebar.header("Configuration")
 
 # --- Private Mode Status Indicator ---
+# Debug: Print environment variables to console
+print(f"DEBUG: QUANT_CORE_PRIVATE_MODE = {os.environ.get('QUANT_CORE_PRIVATE_MODE')}")
+
 is_private_mode_active = os.environ.get('QUANT_CORE_PRIVATE_MODE', 'false').lower() == 'true'
 
 if is_private_mode_active:
@@ -194,8 +203,7 @@ if st.sidebar.button("Run Backtest"):
         try:
             # --- Wrapper for Signal-based Strategies ---
             if selected_strategy_name in ["SimpleMACrossover", "RSI2PeriodStrategy"]:
-                SignalExecutor.underlying_strategy = strategy_class
-                bt_strategy_class = SignalExecutor
+                bt_strategy_class = create_signal_executor(strategy_class)
             else:
                 bt_strategy_class = strategy_class
 

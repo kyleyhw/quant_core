@@ -143,8 +143,9 @@ def get_available_assets():
                 tickers = df_peek.columns.get_level_values(1).unique().tolist()
                 
                 # If it looks like a pair file by name, also add a pair entry
-                parts = filename.split('_')
-                if len(tickers) == 2 and parts[1].isalpha():
+                # e.g. PEP_KO.csv -> PEP-KO
+                parts = filename.replace('.csv', '').split('_')
+                if len(parts) == 2 and len(tickers) == 2:
                      asset_name = f"{parts[0]}-{parts[1]}"
                      assets[asset_name] = file_path
 
@@ -153,7 +154,7 @@ def get_available_assets():
                     assets[ticker] = file_path
             else:
                 # For single asset files, infer from filename
-                asset_name = filename.split('_')[0]
+                asset_name = filename.replace('.csv', '').split('_')[0]
                 assets[asset_name] = file_path
         except Exception as e:
             print(f"Could not parse {filename}: {e}")

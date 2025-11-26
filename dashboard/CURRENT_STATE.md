@@ -45,3 +45,28 @@ The goal was to reliably pass a "private mode" flag to the dashboard script.
     *   **Outcome:** The user reports that even with this simplified, environment variable-based approach, the dashboard is not successfully entering private mode. This indicates that either the environment variable is not being set correctly by the user (despite clear instructions) or, more likely, the Python code's detection of `os.environ.get()` within the Streamlit environment is failing, or the `discover_strategies` function is still not correctly using the `private_mode` flag.
 
 This comprehensive set of issues suggests a deep-seated problem with how certain functionalities (especially signal handling and argument/environment variable detection) interact within the Streamlit runtime, or a persistent flaw in my logic despite numerous revisions.
+
+## User Intentions and Desired Details
+
+The primary intention is to make the dashboard a fully functional, reliable, and user-friendly tool for backtesting trading strategies. The specific desired details for resolution include:
+
+1.  **Fully Functional Signal-Based Strategies:**
+    *   The `SimpleMACrossover` and `RSI2PeriodStrategy` (and by extension, any other signal-based strategies) must execute trades correctly, reflecting a realistic series of buys and sells during backtests, rather than just one trade or `NaN` results. This is crucial for obtaining meaningful performance metrics.
+
+2.  **Reliable Private Mode Activation:**
+    *   The dashboard must reliably detect and activate "Private Mode" when intended. This means that:
+        *   When launched with the appropriate environment variable (`QUANT_CORE_PRIVATE_MODE=true`), the dashboard UI should clearly indicate "Private Mode is ON."
+        *   In "Private Mode," the dropdown for strategy selection must include all private strategies from the `strategies_private` submodule.
+        *   When launched without the environment variable (or with it set to `false`), the dashboard should remain in "Public Mode" and *not* display any private strategies.
+
+3.  **User-Friendly Private Mode Launch:**
+    *   The method for launching the dashboard in private mode should be straightforward and clearly communicated, minimizing confusion for the user. While command-line arguments are preferred, a robust environment variable solution with clear instructions is acceptable if command-line parsing remains problematic within Streamlit.
+
+4.  **Robust Data Handling:**
+    *   The data loading mechanism must be robust across all scenarios:
+        *   Loading single tickers from single-asset files.
+        *   Loading single tickers from multi-asset files (e.g., extracting AAPL from TECH.csv).
+        *   Loading pairs data for pair strategies.
+        *   The automatic download feature should correctly populate data on fresh installs.
+
+In essence, the dashboard needs to move beyond its current buggy state to reliably demonstrate the backtesting capabilities for both public and private strategies, with intuitive UI behavior for data management and mode selection.
