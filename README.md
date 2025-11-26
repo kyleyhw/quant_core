@@ -1,6 +1,6 @@
 # Algorithmic Trading Framework (Open-Core)
 
-This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private.
+This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private. Its initial concrete implementation is for Interactive Brokers (IBKR).
 
 ## Purpose
 
