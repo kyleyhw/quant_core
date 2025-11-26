@@ -1,6 +1,6 @@
 # Backtest Report: BuyAndHoldStrategy
 
-**Run Date:** 2025-11-26 20:45:43
+**Run Date:** 2025-11-26 21:13:07
 
 ## Data Configuration
 - **Data Source:** `data/benchmark/SPY_2024-10-01_2025-11-25.csv`
@@ -45,7 +45,7 @@
 | Kelly Criterion        | nan                 |
 
 ## Equity Curve
-[View interactive plot](backtest_BuyAndHoldStrategy_20251126_204543.html)
+[View interactive plot](backtest_BuyAndHoldStrategy_20251126_211307.html)
 
 ## Trade Log
 No trades executed.

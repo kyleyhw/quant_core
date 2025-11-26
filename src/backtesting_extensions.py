@@ -11,7 +11,7 @@ class CustomBroker(_Broker):
         commission = kwargs.pop('commission', 0.0)
         
         # Pass 0.0 to the parent class to bypass the float validation check
-        super().__init__(commission=0.0, spread=spread, **kwargs)
+        super().__init__(commission=0.0, **kwargs)
         
         # Set the real commission on the instance
         self._commission = commission
