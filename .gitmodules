@@ -1,3 +1,3 @@
 [submodule "strategies/private"]
-	path = strategies/private
+	path = private_strategies
 	url = https://github.com/kyleyhw/quant_strategies.git

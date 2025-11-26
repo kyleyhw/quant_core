@@ -66,7 +66,7 @@ def discover_strategies():
     
     # Define search paths for public and private strategies
     public_path = Path(project_root) / 'strategies'
-    private_path = public_path / 'private' / 'private_strategies'
+    private_path = Path(project_root) / 'private_strategies' / 'private_strategies'
     search_paths = [public_path]
     
     private_strategies_available = private_path.exists() and any(private_path.iterdir())
