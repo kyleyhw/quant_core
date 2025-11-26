@@ -84,6 +84,6 @@ Benchmarking: When comparing strategies, use Sharpe Ratio as the primary metric,
 
 * **Test Reports**: All test reports, benchmarks, and training logs must include the **runtime** of the execution. These reports should be in markdown files, in their own directory within the project folder.
 * **Report Content**: Reports must clearly explain:ch significant change when working on projects. Err on the side of over-committing rather than under-committing if unsure. When git pushing, write appropriate, specific, and useful commit messages.
-    *   **CRITICAL**: Always sync **BOTH** the main repository (`ibkr_quant_core`) AND the private submodule (`private_strategies`).
+    *   **CRITICAL**: Always sync **BOTH** the main repository (`ibkr_quant_core`) AND the private submodule (`strategies_private`).
     *   `git push origin master` (Main)
-    *   `cd private_strategies; git push origin main` (Submodule)
+    *   `cd strategies_private; git push origin main` (Submodule)

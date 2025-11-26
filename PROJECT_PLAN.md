@@ -25,7 +25,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 13. [completed] Save the trained model artifact to the `models/` directory.
 
 ## Phase 4: Machine Learning Strategy Implementation
-14. [completed] Create a private strategy in `private_strategies/` that uses a trained model.
+14. [completed] Create a private strategy in `strategies_private/` that uses a trained model.
 15. [completed] Backtest the ML-based strategy.
 
 ## Phase 5: Advanced Strategy Development
