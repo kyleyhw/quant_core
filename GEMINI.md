@@ -37,6 +37,12 @@ Info: Trade execution, Daily P&L summary.
 Development Guidelines
 Type Hinting: All functions must have Python type hints.
 
+**Full Set of Reports**: This term refers to the complete output of the backtesting and benchmarking process. It includes:
+1.  A detailed backtest report for each individual strategy (both public and private).
+2.  A public benchmark report, comparing all public strategies.
+3.  An "all" benchmark report, comparing all public and private strategies.
+Each report is to be generated in its appropriate directory (`/strategies/reports` for public, and `/strategies_private/reports` for private and "all" benchmark reports) to ensure no private information is publicly visible.
+
 # Project: IBKR Open-Core Algorithmic Trading Bot
 
 ## Context & Purpose
@@ -72,18 +78,5 @@ Triggers:
 Critical: Connection loss, Order Rejection, "Fat Finger" block.
 
 Info: Trade execution, Daily P&L summary.
-
-Development Guidelines
-Type Hinting: All functions must have Python type hints.
-
-Documentation: Docstrings should focus on "Why" this exists, not just "What" it does.
-
-Backtesting: When creating a backtest, assume 0.005 (0.5%) commission/slippage to remain realistic.
-
-Benchmarking: When comparing strategies, use Sharpe Ratio as the primary metric, not total return.
-
-* **Test Reports**: All test reports, benchmarks, and training logs must include the **runtime** of the execution. These reports should be in markdown files, in their own directory within the project folder.
-* **Report Content**: Reports must clearly explain:ch significant change when working on projects. Err on the side of over-committing rather than under-committing if unsure. When git pushing, write appropriate, specific, and useful commit messages.
-    *   **CRITICAL**: Always sync **BOTH** the main repository (`ibkr_quant_core`) AND the private submodule (`strategies_private`).
     *   `git push origin master` (Main)
     *   `cd strategies_private; git push origin main` (Submodule)

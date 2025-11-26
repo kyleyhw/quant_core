@@ -5,6 +5,7 @@ import sys
 import os
 import subprocess
 from backtesting import Backtest, Strategy
+from src.backtesting_extensions import CustomBacktest
 
 # --- Add project root and check for data ---
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -12,7 +13,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from dashboard import utils
-from src.commission_models import ibkr_tiered_commission
+from src.commission_models import COMMISSION_MODELS
 
 # --- Signal Executor Factory ---
 def create_signal_executor(base_strategy_class):
@@ -106,7 +107,11 @@ strategy_names = [s["name"] for s in all_strategies]
 selected_strategy_name = st.sidebar.selectbox("Select Strategy", strategy_names)
 selected_strategy_config = next((s for s in all_strategies if s["name"] == selected_strategy_name), None)
 
-# 2. Asset & Data Selection (Conditional UI)
+# 2. Commission Model Selection
+commission_model_name = st.sidebar.selectbox("Commission Model", list(COMMISSION_MODELS.keys()), index=0)
+selected_commission = COMMISSION_MODELS[commission_model_name]
+
+# 3. Asset & Data Selection (Conditional UI)
 df = pd.DataFrame()
 
 if not download_mode: # Corresponds to "Use Existing Data"
@@ -132,17 +137,7 @@ if not download_mode: # Corresponds to "Use Existing Data"
             st.sidebar.warning("No single-asset data found.")
             st.stop()
         
-        search_term = st.sidebar.text_input("Search Asset", "")
-        if search_term:
-            filtered_assets = [asset for asset in single_assets if search_term.upper() in asset.upper()]
-        else:
-            filtered_assets = single_assets
-            
-        if not filtered_assets:
-            st.sidebar.warning("No assets found matching your search.")
-            st.stop()
-            
-        selected_asset = st.sidebar.selectbox("Select Asset", filtered_assets)
+        selected_asset = st.sidebar.selectbox("Select Asset", single_assets)
         
     # Load from local file
     if selected_asset:
@@ -214,35 +209,6 @@ if st.sidebar.button("Run Backtest"):
                 st.error("Pairs trading requires 2 tickers. Please download data for 2 tickers.")
                 st.stop()
             
-            bt = Backtest(df, bt_strategy_class, cash=10000, commission=ibkr_tiered_commission)
-            stats = bt.run()
-            
-            # --- Results Display ---
-            st.header("Backtest Results")
-            
-            # Metrics
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Return [%]", f"{stats['Return [%]']:.2f}%")
-            col2.metric("Sharpe Ratio", f"{stats['Sharpe Ratio']:.2f}")
-            col3.metric("Max Drawdown [%]", f"{stats['Max. Drawdown [%]']:.2f}%")
-            col4.metric("Win Rate [%]", f"{stats['Win Rate [%]']:.2f}%")
-            
-            st.subheader("Equity Curve")
-            equity_curve = stats['_equity_curve']
-            
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=equity_curve.index, y=equity_curve['Equity'], mode='lines', name='Equity'))
-            fig.update_layout(title='Portfolio Equity', xaxis_title='Date', yaxis_title='Equity ($)')
-            st.plotly_chart(fig, use_container_width=True)
-            
-            st.subheader("Trade Log")
-            trades = stats['_trades']
-            st.dataframe(trades)
-            
-            st.subheader("Full Stats")
-            st.text(str(stats))
-            
-        except Exception as e:
             st.error(f"An error occurred during backtest: {e}")
     else:
         st.warning("Please select a valid strategy and asset/data.")

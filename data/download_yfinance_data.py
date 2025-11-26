@@ -69,5 +69,6 @@ if __name__ == "__main__":
                 
         else:
             # Single file output (Aggregate or Single Ticker)
+            data.index.name = 'date'
             data.to_csv(args.output)
             print(f"Data saved to {args.output}")

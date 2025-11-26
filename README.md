@@ -136,5 +136,5 @@ The framework is designed to be extended. New markets can be added by creating a
 ## Development Guidelines
 - **Type Hinting:** All functions must have Python type hints.
 - **Documentation:** Docstrings should focus on **"Why"** a component exists, not just "What" it does.
-- **Backtesting:** Assume a realistic **0.005 (0.5%)** for commission and slippage to avoid over-optimistic results.
+- **Backtesting:** Use the `ibkr_tiered_commission` function to simulate realistic IBKR Pro Tiered pricing.
 - **Benchmarking:** Use the **Sharpe Ratio** as the primary metric for comparing strategies, not total return.

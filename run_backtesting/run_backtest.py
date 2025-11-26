@@ -12,21 +12,42 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from strategies.base_strategy import BaseStrategy
-from src.commission_models import ibkr_tiered_commission
+from src.commission_models import COMMISSION_MODELS
+from src.backtesting_extensions import CustomBacktest
 from pathlib import Path
 import inspect
+
+# --- Signal Executor Wrapper (for signal-based strategies) ---
+class SignalExecutor(Strategy):
+    underlying_strategy = None
+
+    def init(self):
+        if not self.underlying_strategy:
+            raise ValueError("SignalExecutor requires an `underlying_strategy` to be set.")
+        self.strategy = self.underlying_strategy(self._broker, self.data, self._params)
+        self.strategy.init()
+
+    def next(self):
+        signal = self.strategy.next()
+        if signal == 'buy':
+            if self.position.is_short:
+                self.position.close()
+            if not self.position.is_long:
+                self.buy()
+        elif signal == 'sell':
+            if self.position.is_long:
+                self.position.close()
+            if not self.position.is_short:
+                self.sell()
 
 def discover_strategies() -> dict:
     """Dynamically discovers and imports all available strategies."""
     strategies = {}
     
     public_path = Path(project_root) / 'strategies'
-    private_path = public_path / 'private' / 'strategies_private'
-    search_paths = [public_path]
+    private_path = Path(project_root) / 'strategies_private'
+    search_paths = [public_path, private_path]
     
-    if private_path.exists() and any(private_path.iterdir()):
-        search_paths.append(private_path)
-
     for path in search_paths:
         for file in path.glob('*.py'):
             if file.name.startswith(('__init__', 'base_')):
@@ -88,6 +109,13 @@ def main():
         default=10000,
         help='Initial cash for the backtest.'
     )
+    parser.add_argument(
+        '--commission',
+        type=str,
+        default='IBKR Tiered',
+        choices=list(COMMISSION_MODELS.keys()),
+        help='Commission model to use.'
+    )
     args = parser.parse_args()
 
     # --- 1. Load Data ---
@@ -97,20 +125,39 @@ def main():
         print("Please run the data loader or provide a valid path.")
         return
 
-    # Load the data
+    # Load the data without parsing dates initially
     data = pd.read_csv(args.data)
-    # Standardize column names to lowercase
-    data.columns = [col.lower() for col in data.columns]
-    
-    # Convert 'date' column to datetime and set as index
-    data['date'] = pd.to_datetime(data['date'], utc=True)
-    data = data.set_index('date')
-    # Make timezone-naive if it became aware during parsing
-    if data.index.tz is not None:
+    data.rename(columns={'date': 'Date'}, inplace=True)
+
+    # Identify the date column (case-insensitive) and convert to datetime
+    date_col_candidates = [col for col in data.columns if col.lower() == 'date']
+    if not date_col_candidates:
+        print("Error: No date column found in data. Expected 'Date' or 'date'.")
+        return
+    date_col = date_col_candidates[0] # Take the first match
+
+    data[date_col] = pd.to_datetime(data[date_col], utc=True)
+    data.set_index(date_col, inplace=True)
+    data.index.name = 'Date' # Standardize index name
+
+    # Ensure timezone-naive
+    if isinstance(data.index, pd.DatetimeIndex) and data.index.tz is not None:
         data.index = data.index.tz_localize(None)
-    
-    # Ensure standard column names (Open, High, Low, Close, Volume)
+
+    # Standardize column names (Open, High, Low, Close, Volume) to capitalize for Backtesting.py
     data.columns = [col.capitalize() for col in data.columns]
+    
+    # Ensure standard columns exist (Open, High, Low, Close, Volume) - Backtesting.py requirement
+    required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+    if not all(col in data.columns for col in required_cols):
+        print(f"Error: Missing required columns for Backtesting.py: {set(required_cols) - set(data.columns)}")
+        return
+
+    # Explicitly convert to numeric, coercing errors will turn non-numeric into NaN
+    for col in required_cols:
+        data[col] = pd.to_numeric(data[col], errors='coerce')
+
+    data.dropna(inplace=True) # Drop any rows with NaN values
 
     
     print("Data loaded successfully:")
@@ -135,12 +182,19 @@ def main():
             print(f"   with Underlying Strategy: {args.underlying}")
     
     # --- 3. Run Backtest ---
-    print(f"\nRunning backtest with initial cash ${args.cash:,.2f} and IBKR Tiered commission model...")
-    bt = Backtest(
+    print(f"\nRunning backtest with initial cash ${args.cash:,.2f} and commission model: {args.commission}...")
+    
+    # --- Wrapper for Signal-based Strategies ---
+    bt_strategy_class = StrategyClass
+    if args.strategy in ["SimpleMACrossover", "RSI2PeriodStrategy"]:
+        SignalExecutor.underlying_strategy = StrategyClass
+        bt_strategy_class = SignalExecutor
+
+    bt = CustomBacktest(
         data,
-        StrategyClass,
+        bt_strategy_class,
         cash=args.cash,
-        commission=ibkr_tiered_commission
+        commission=COMMISSION_MODELS[args.commission]
     )
     
     stats = bt.run()
@@ -151,10 +205,10 @@ def main():
     print("\nGenerating plot and report...")
 
     # Dynamically determine if the strategy is private by checking its import path
-    if 'strategies.private' in StrategyClass.__module__:
-        output_dir = os.path.join('strategies', 'private', 'reports')
+    if 'strategies_private' in StrategyClass.__module__:
+        output_dir = os.path.join('strategies_private', 'reports')
     else:
-        output_dir = 'reports'
+        output_dir = 'strategies/reports' # Changed from 'reports'
         
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
@@ -172,6 +226,11 @@ def main():
         f.write(f"# Backtest Report: {args.strategy}\n\n")
         f.write(f"**Run Date:** {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
+        f.write("## Data Configuration\n")
+        f.write(f"- **Data Source:** `{args.data}`\n")
+        f.write(f"- **Date Range:** {data.index.min().date()} to {data.index.max().date()}\n")
+        f.write(f"- **Commission Model:** {args.commission}\n\n")
+
         f.write("## Strategy Parameters\n")
         strategy_params = stats._strategy._params
         for param, value in strategy_params.items():
@@ -185,12 +244,31 @@ def main():
         f.write("\n") # Add a newline after parameters
 
         f.write("## Backtest Metrics\n")
+        # Filter out internal keys (starting with _)
         stats_to_report = stats[~stats.index.str.startswith('_')]
+        # Explicitly check for commission if available in the broker or strategy context
+        # Note: backtesting.py stats might not have a direct 'Commission' field in the summary series
+        # but we can calculate it from trades if needed.
+        
         f.write(stats_to_report.to_markdown())
         f.write("\n\n")
 
-        f.write("## Equity Curve & Trades\n")
-        f.write(f"[View interactive plot]({plot_filename_rel})\n")
+        f.write("## Equity Curve\n")
+        f.write(f"[View interactive plot]({plot_filename_rel})\n\n")
+        
+        f.write("## Trade Log\n")
+        trades = stats['_trades']
+        if not trades.empty:
+            # Format trade log for readability
+            trades_formatted = trades.copy()
+            if 'EntryTime' in trades_formatted.columns:
+                trades_formatted['EntryTime'] = trades_formatted['EntryTime'].dt.strftime('%Y-%m-%d %H:%M')
+            if 'ExitTime' in trades_formatted.columns:
+                trades_formatted['ExitTime'] = trades_formatted['ExitTime'].dt.strftime('%Y-%m-%d %H:%M')
+            
+            f.write(trades_formatted.to_markdown())
+        else:
+            f.write("No trades executed.\n")
 
     print(f"Detailed report saved to {report_filename}")
 

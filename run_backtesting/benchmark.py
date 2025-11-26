@@ -66,13 +66,11 @@ def discover_strategies():
     
     # Define search paths for public and private strategies
     public_path = Path(project_root) / 'strategies'
-    private_path = Path(project_root) / 'strategies_private' / 'private_strategies'
-    search_paths = [public_path]
+    private_path = Path(project_root) / 'strategies_private'
+    search_paths = [public_path, private_path]
     
     private_strategies_available = private_path.exists() and any(private_path.iterdir())
-    if private_strategies_available:
-        search_paths.append(private_path)
-    else:
+    if not private_strategies_available:
         print("Warning: Private strategies not found. Running benchmark on public strategies only.")
 
     for path in search_paths:
