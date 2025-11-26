@@ -1,6 +1,6 @@
 # Algorithmic Trading Framework (Open-Core)
 
-A flexible, market-agnostic algorithmic trading framework designed for extensible strategy development. Features a robust, open-core infrastructure with a regime-aware ML pipeline, multi-asset backtesting, and strict risk management. Built to isolate proprietary alpha logic from its publicly available foundation.
+This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private.
 
 ## Purpose
 
