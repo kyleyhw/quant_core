@@ -57,8 +57,8 @@ This documentation provides a detailed overview of the framework and its IBKR im
 
 To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
 
-*   **Latest Public Benchmark Report:** [./reports/benchmark_report_multi_asset_20251126_150127.md](./reports/benchmark_report_multi_asset_20251126_150127.md)
-*   **Individual Strategy Reports:** View all generated reports and plots in the [reports/](./reports/) directory.
+*   **Latest Public Benchmark Report:** [./strategies/reports/benchmark_report_multi_asset_20251126_150127.md](./strategies/reports/benchmark_report_multi_asset_20251126_150127.md)
+*   **Individual Strategy Reports:** View all generated reports and plots in the [strategies/reports/](./strategies/reports/) directory.
 
 ## Directory Structure
 
@@ -118,8 +118,8 @@ ibkr_quant_core/
 The framework is designed to be extended. New markets can be added by creating a new adapter in `src/market_adapters/` and implementing the classes defined in `src/interfaces.py`. The core logic in strategies should remain unchanged.
 
 ### 2. Machine Learning Workflow (Prevention of Skew)
-- **Training:** Occurs in the `research/` directory. Trained models are saved to `models/`.
-- **Inference:** Occurs within strategies. Models are loaded from `models/`.
+- **Training:** Occurs in the `strategies_private/research/` directory. Trained models are saved to `strategies_private/models/`.
+- **Inference:** Occurs within strategies. Models are loaded from `strategies_private/models/`.
 - **Feature Consistency:** Both training and inference code **MUST** import feature generation logic (e.g., indicators) from `src/feature_engineering.py`. This is a critical rule to prevent training-serving skew.
 
 ### 3. Execution & Safety (The "Fat Finger" Layer)

@@ -14,7 +14,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 7.  [completed] Develop the parent `base_strategy.py` to handle position sizing and stop-loss logic.
 8.  [completed] Create a public `simple_ma_crossover.py` strategy (e.g., a moving average crossover) inheriting from the base strategy.
 9.  [completed] Implement the backtesting script `run_backtesting/run_backtest.py` to test a single strategy.
-10. [completed] Generate the first backtest report and save it to the `reports/` directory.
+10. [completed] Generate the first backtest report and save it to the `strategies/reports/` directory.
 
 ## Phase 3: Feature Engineering & ML Model Training
 11. [completed] Develop the shared `src/feature_engineering.py` module with common technical indicators.
@@ -22,7 +22,7 @@ This document outlines the planned phases and tasks for developing the IBKR Open
     - [completed] Created `research/train_regime_model.py` (XGBoost regime classifier)
     - [completed] Created `research/utils.py` (simplified data fetching)
     - [completed] Run script to train and save model
-13. [completed] Save the trained model artifact to the `models/` directory.
+13. [completed] Save the trained model artifact to the `strategies_private/models/` directory.
 
 ## Phase 4: Machine Learning Strategy Implementation
 14. [completed] Create a private strategy in `strategies_private/` that uses a trained model.
