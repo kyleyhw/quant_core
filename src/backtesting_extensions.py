@@ -2,6 +2,8 @@ from backtesting import Backtest
 from backtesting.backtesting import _Broker
 from functools import partial
 
+import inspect
+
 class CustomBroker(_Broker):
     """
     A custom Broker implementation that supports callable commission models.
@@ -9,6 +11,12 @@ class CustomBroker(_Broker):
     def __init__(self, spread=0, **kwargs):
         # Extract the real commission (which might be a callable)
         commission = kwargs.pop('commission', 0.0)
+        
+        # Check if parent _Broker expects 'spread'
+        # Some versions of backtesting.py require it, others don't (or it was removed/added)
+        sig = inspect.signature(_Broker.__init__)
+        if 'spread' in sig.parameters:
+            kwargs['spread'] = spread
         
         # Pass 0.0 to the parent class to bypass the float validation check
         super().__init__(commission=0.0, **kwargs)

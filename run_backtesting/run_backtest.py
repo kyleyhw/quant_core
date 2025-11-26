@@ -100,8 +100,9 @@ def main():
     parser.add_argument(
         '--data',
         type=str,
-        default='data/SPY_1hour_1year.csv',
-        help='Path to the historical data CSV file.'
+        nargs='+',
+        default=['data/SPY_1hour_1year.csv'],
+        help='Path(s) to the historical data CSV file(s).'
     )
     parser.add_argument(
         '--cash',
@@ -120,55 +121,81 @@ def main():
 
     # --- 1. Load Data ---
     print(f"Loading data from {args.data}...")
-    if not os.path.exists(args.data):
-        print(f"Error: Data file not found at {args.data}")
-        print("Please run the data loader or provide a valid path.")
-        return
-
-    # Load the data without parsing dates initially
-    data = pd.read_csv(args.data)
-    data.rename(columns={'date': 'Date'}, inplace=True)
-
-    # Identify the date column (case-insensitive) and convert to datetime
-    date_col_candidates = [col for col in data.columns if col.lower() == 'date']
-    if not date_col_candidates:
-        print("Error: No date column found in data. Expected 'Date' or 'date'.")
-        return
-    date_col = date_col_candidates[0] # Take the first match
-
-    data[date_col] = pd.to_datetime(data[date_col], utc=True)
-    data.set_index(date_col, inplace=True)
-    data.index.name = 'Date' # Standardize index name
-
-    # Ensure timezone-naive
-    if isinstance(data.index, pd.DatetimeIndex) and data.index.tz is not None:
-        data.index = data.index.tz_localize(None)
-
-    # Standardize column names (Open, High, Low, Close, Volume) to capitalize for Backtesting.py
-    data.columns = [col.capitalize() for col in data.columns]
-
-    # Special handling for PairsTradingStrategy
-    if args.strategy == 'PairsTradingStrategy':
-        # Map Asset 1 columns to standard OHLCV (Copy them so original names remain)
-        data['Open'] = data['Open_1']
-        data['High'] = data['High_1']
-        data['Low'] = data['Low_1']
-        data['Close'] = data['Close_1']
-        data['Volume'] = data['Volume_1']
     
-    # Ensure standard columns exist (Open, High, Low, Close, Volume) - Backtesting.py requirement
-    required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-    if args.strategy != 'PairsTradingStrategy' and not all(col in data.columns for col in required_cols):
-        print(f"Error: Missing required columns for Backtesting.py: {set(required_cols) - set(data.columns)}")
+    loaded_dfs = []
+    # Ensure args.data is a list (it should be with nargs='+')
+    data_paths = args.data if isinstance(args.data, list) else [args.data]
+    
+    for file_path in data_paths:
+        if not os.path.exists(file_path):
+            print(f"Error: Data file not found at {file_path}")
+            return
+
+        # Load the data without parsing dates initially
+        df = pd.read_csv(file_path)
+        df.rename(columns={'date': 'Date'}, inplace=True)
+
+        # Identify the date column (case-insensitive) and convert to datetime
+        date_col_candidates = [col for col in df.columns if col.lower() == 'date']
+        if not date_col_candidates:
+            print(f"Error: No date column found in {file_path}. Expected 'Date' or 'date'.")
+            return
+        date_col = date_col_candidates[0]
+
+        df[date_col] = pd.to_datetime(df[date_col], utc=True)
+        df.set_index(date_col, inplace=True)
+        df.index.name = 'Date'
+
+        # Ensure timezone-naive
+        if isinstance(df.index, pd.DatetimeIndex) and df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
+
+        # Standardize column names
+        df.columns = [col.capitalize() for col in df.columns]
+        
+        # Explicitly convert to numeric
+        for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        loaded_dfs.append(df)
+
+    if not loaded_dfs:
+        print("Error: No data loaded.")
         return
 
-    # Explicitly convert to numeric, coercing errors will turn non-numeric into NaN
-    if args.strategy != 'PairsTradingStrategy':
-        for col in required_cols:
-            data[col] = pd.to_numeric(data[col], errors='coerce')
+    # Merge logic
+    if len(loaded_dfs) == 1:
+        data = loaded_dfs[0]
+    else:
+        # Multi-file merge
+        data = loaded_dfs[0].copy()
+        
+        # If PairsTradingStrategy, map specifically to _1 and _2
+        if args.strategy == 'PairsTradingStrategy':
+            # Asset 1 (Primary) -> Suffix _1
+            data = data.add_suffix('_1')
+            
+            # Asset 2 -> Suffix _2
+            if len(loaded_dfs) > 1:
+                df2 = loaded_dfs[1].add_suffix('_2')
+                data = pd.merge(data, df2, left_index=True, right_index=True, how='inner')
+            
+            # Map Asset 1 back to standard OHLCV for Backtesting.py execution
+            # But keep the _1 columns for the strategy logic
+            data['Open'] = data['Open_1']
+            data['High'] = data['High_1']
+            data['Low'] = data['Low_1']
+            data['Close'] = data['Close_1']
+            data['Volume'] = data['Volume_1']
+            
+        else:
+            # Generic merge for other multi-asset strategies
+            base_df = loaded_dfs[0]
+            for i, df in enumerate(loaded_dfs[1:], start=2):
+                data = pd.merge(data, df, left_index=True, right_index=True, how='inner', suffixes=('', f'_{i}'))
 
-    data.dropna(inplace=True) # Drop any rows with NaN values
-
+    data.dropna(inplace=True)
     
     print("Data loaded successfully:")
     print(data.head())
