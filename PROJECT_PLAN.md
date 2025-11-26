@@ -55,8 +55,18 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 33. [pending] Select candidates for implementation.
 34. [pending] Backtest and validate new strategies.
 
-## Phase 9: Paper Trading & Live Execution (Future)
-35. [pending] Integrate the execution module with the base strategy.
-36. [pending] Set up Paper Trading environment.
-37. [pending] Conduct "Dry Run" with live market data (no execution).
-38. [pending] Begin Paper Trading with small capital allocation.
+## Phase 9: High-Frequency & Intraday Strategy Research
+35. [pending] Research Intraday Logic (VWAP, Order Flow Imbalance).
+36. [pending] Implement Intraday Data Handling (1-minute / 5-minute bars).
+37. [pending] Develop Intraday Strategy (e.g., Gap & Go, Mean Reversion).
+
+## Phase 10: Web UI Dashboard (Streamlit)
+38. [pending] Create `dashboard/app.py`.
+39. [pending] Implement Strategy & Asset selectors.
+40. [pending] Visualize Backtest Results (Equity Curve, Drawdown, Trade Log).
+
+## Phase 11: Paper Trading & Live Execution (Future)
+41. [pending] Integrate the execution module with the base strategy.
+42. [pending] Set up Paper Trading environment.
+43. [pending] Conduct "Dry Run" with live market data (no execution).
+44. [pending] Begin Paper Trading with small capital allocation.

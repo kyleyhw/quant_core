@@ -41,8 +41,10 @@ if __name__ == "__main__":
         
         # If multiple tickers and output doesn't end in .csv, treat as directory
         if len(args.tickers) > 1 and not args.output.lower().endswith('.csv'):
-            output_path.mkdir(parents=True, exist_ok=True)
-            print(f"Saving individual files to {output_path}...")
+          # Define output directory
+            DATA_DIR = Path(__file__).parent / "benchmark"
+            DATA_DIR.mkdir(exist_ok=True)
+            print(f"Saving individual files to {DATA_DIR}...")
             
             # yfinance returns MultiIndex (Price, Ticker) if multiple tickers
             # We need to iterate and save each

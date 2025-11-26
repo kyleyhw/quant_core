@@ -7,22 +7,7 @@ import importlib
 import inspect
 from datetime import datetime
 from pathlib import Path
-
-# --- Add project root to path ---
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-from src.commission_models import ibkr_tiered_commission
-import pandas as pd
-from backtesting import Backtest, Strategy
-import os
-import sys
-import argparse
-import importlib
-import inspect
-from datetime import datetime
-from pathlib import Path
+import time
 
 # --- Add project root to path ---
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,6 +16,30 @@ if project_root not in sys.path:
 
 from src.commission_models import ibkr_tiered_commission
 from strategies.base_strategy import BaseStrategy
+
+# --- Signal Executor Wrapper ---
+class SignalExecutor(Strategy):
+    """
+    A wrapper to execute trades based on signals returned by an underlying strategy.
+    This allows strategies designed for meta-strategy integration (which return
+    signals) to be backtested directly.
+    """
+    underlying_strategy = None
+
+    def init(self):
+        if not self.underlying_strategy:
+            raise ValueError("SignalExecutor requires an `underlying_strategy` to be set.")
+        # Instantiate the actual strategy
+        self.strategy = self.underlying_strategy(self._broker, self.data, self._params)
+        self.strategy.init()
+
+    def next(self):
+        # Get signal from the underlying strategy
+        signal = self.strategy.next()
+        if signal == 'buy':
+            self.buy()
+        elif signal == 'sell':
+            self.position.close()
 
 # --- Configuration for data and meta-strategies ---
 # This allows us to map specific data files to strategies by name
@@ -48,7 +57,7 @@ STRATEGY_CONFIG = {
         "params": {}
     }
 }
-DEFAULT_DATA = "data/SPY_2024_2025.csv"
+DEFAULT_DATA = "data/benchmark"
 
 
 def discover_strategies():
@@ -98,15 +107,16 @@ def discover_strategies():
                             strategies["standalone"].append(config)
                             
                             # Create "Hold" variants for Regime strategies
-                            if name in ["MLRegimeStrategy", "HmmRegimeStrategy", "MetaRegimeFilterStrategy"]:
-                                config_hold = config.copy()
-                                config_hold["name"] = f"{name}_Hold"
-                                config_hold["report_name"] = f"{name} (Hold Sideways)"
-                                if name == "MetaRegimeFilterStrategy":
-                                     config_hold["params"] = {"hold_during_unfavorable": True}
-                                else:
-                                     config_hold["params"] = {"hold_during_sideways": True}
-                                strategies["standalone"].append(config_hold)
+                            # DISABLED per user request (2025-11-25) to declutter reports
+                            # if name in ["MLRegimeStrategy", "HmmRegimeStrategy", "MetaRegimeFilterStrategy"]:
+                            #     config_hold = config.copy()
+                            #     config_hold["name"] = f"{name}_Hold"
+                            #     config_hold["report_name"] = f"{name} (Hold Sideways)"
+                            #     if name == "MetaRegimeFilterStrategy":
+                            #          config_hold["params"] = {"hold_during_unfavorable": True}
+                            #     else:
+                            #          config_hold["params"] = {"hold_during_sideways": True}
+                            #     strategies["standalone"].append(config_hold)
 
             except ImportError as e:
                 print(f"Error importing module {module_name}: {e}")
@@ -136,6 +146,11 @@ def discover_strategies():
 
 def run_benchmark(scope: str, data_path: str = None):
     """Runs a benchmark for the specified scope of strategies across provided data."""
+    
+    # Use default data directory if no path provided
+    if data_path is None:
+        data_path = DEFAULT_DATA
+        
     results = []
     standalone_strategies, meta_strategies = discover_strategies()
 
@@ -159,27 +174,66 @@ def run_benchmark(scope: str, data_path: str = None):
             
             for file_path in csv_files:
                 try:
-                    df = pd.read_csv(file_path)
-                    # Infer asset name from filename (e.g., TSLA_2024_2025.csv -> TSLA)
-                    asset_name = Path(file_path).stem.split('_')[0]
+                    # Check for MultiIndex (Price/Ticker structure)
+                    with open(file_path, 'r') as f:
+                        header_line_1 = f.readline()
+                        header_line_2 = f.readline()
                     
-                    # Standardize columns
-                    df.columns = [col.capitalize() for col in df.columns]
-                    
-                    # Standardize Index
-                    if 'Date' in df.columns:
-                        df['Date'] = pd.to_datetime(df['Date'], utc=True)
-                        df.set_index('Date', inplace=True)
-                    elif 'date' in df.columns:
-                        df['date'] = pd.to_datetime(df['date'], utc=True)
-                        df.set_index('date', inplace=True)
-                        df.index.name = 'Date'
-                    
-                    if isinstance(df.index, pd.DatetimeIndex):
-                        df.index = df.index.tz_localize(None)
+                    if "Ticker" in header_line_2 or "Price" in header_line_1:
+                        print(f"Loading multi-asset data from {os.path.basename(file_path)}...")
+                        full_data = pd.read_csv(file_path, header=[0, 1], index_col=0)
+                        full_data.index.name = 'date'
                         
-                    assets_map[asset_name] = {'data': df, 'source': os.path.basename(file_path)}
-                    print(f"Loaded {asset_name} from {os.path.basename(file_path)}")
+                        tickers = full_data.columns.get_level_values(1).unique().tolist()
+                        
+                        for ticker in tickers:
+                            df = pd.DataFrame()
+                            # Handle cases where columns might be missing for some tickers
+                            try:
+                                df['Open'] = full_data[('Open', ticker)]
+                                df['High'] = full_data[('High', ticker)]
+                                df['Low'] = full_data[('Low', ticker)]
+                                df['Close'] = full_data[('Close', ticker)]
+                                df['Volume'] = full_data[('Volume', ticker)]
+                            except KeyError:
+                                continue
+
+                            df = df.apply(pd.to_numeric, errors='coerce')
+                            df.dropna(inplace=True)
+                            
+                            if not isinstance(df.index, pd.DatetimeIndex):
+                                df.index = pd.to_datetime(df.index, utc=True)
+                            if isinstance(df.index, pd.DatetimeIndex):
+                                df.index = df.index.tz_localize(None)
+                                
+                            assets_map[ticker] = {'data': df, 'source': os.path.basename(file_path)}
+                            print(f"   Loaded {ticker}")
+                    else:
+                        # Single Asset File
+                        df = pd.read_csv(file_path)
+                        # Infer asset name from filename (e.g., TSLA_2024_2025.csv -> TSLA)
+                        asset_name = Path(file_path).stem.split('_')[0]
+                        
+                        # Standardize columns
+                        df.columns = [col.capitalize() for col in df.columns]
+                        
+                        # Standardize Index
+                        if 'Date' in df.columns:
+                            df['Date'] = pd.to_datetime(df['Date'], utc=True)
+                            df.set_index('Date', inplace=True)
+                        elif 'date' in df.columns:
+                            df['date'] = pd.to_datetime(df['date'], utc=True)
+                            df.set_index('date', inplace=True)
+                            df.index.name = 'Date'
+                        
+                        if isinstance(df.index, pd.DatetimeIndex):
+                            df.index = df.index.tz_localize(None)
+                        
+                        # Clean data
+                        df.dropna(inplace=True)
+                            
+                        assets_map[asset_name] = {'data': df, 'source': os.path.basename(file_path)}
+                        print(f"Loaded {asset_name} from {os.path.basename(file_path)}")
                     
                 except Exception as e:
                     print(f"Error loading {file_path}: {e}")
@@ -240,9 +294,6 @@ def run_benchmark(scope: str, data_path: str = None):
             except Exception as e:
                 print(f"Critical Error loading data {data_path}: {e}")
                 return
-    else:
-        print("No data override provided. Using default SPY data for all strategies.")
-        assets_map['SPY'] = {'data': None, 'source': 'Default Config'}
 
     # --- Benchmarking Loop ---
     for asset_name, asset_info in assets_map.items():
@@ -290,9 +341,20 @@ def run_benchmark(scope: str, data_path: str = None):
                 # Apply parameters (for both Meta and Standalone variants)
                 for param, value in config.get('params', {}).items():
                     setattr(strategy_class, param, value)
+
+                # --- Wrapper for Signal-based Strategies ---
+                if config["name"] in ["SimpleMACrossover", "RSI2PeriodStrategy"]:
+                    SignalExecutor.underlying_strategy = strategy_class
+                    bt_strategy_class = SignalExecutor
+                else:
+                    bt_strategy_class = strategy_class
                 
-                bt = Backtest(data, strategy_class, cash=10000, commission=ibkr_tiered_commission)
+                bt = Backtest(data, bt_strategy_class, cash=10000, commission=ibkr_tiered_commission)
+                
+                start_time = time.time()
                 stats = bt.run()
+                end_time = time.time()
+                runtime = end_time - start_time
                 
                 key_metrics = {
                     "Asset": asset_name,
@@ -302,10 +364,11 @@ def run_benchmark(scope: str, data_path: str = None):
                     "Max. Drawdown [%]": stats["Max. Drawdown [%]"],
                     "Win Rate [%]": stats["Win Rate [%]"],
                     "# Trades": stats["# Trades"],
+                    "Runtime [s]": round(runtime, 4),
                     "Source": asset_info['source']
                 }
                 results.append(key_metrics)
-                print(f"   Finished: {strategy_name}")
+                print(f"   Finished: {strategy_name} (Runtime: {runtime:.4f}s)")
                 
             except Exception as e:
                 print(f"   Error running {strategy_name} on {asset_name}: {e}")

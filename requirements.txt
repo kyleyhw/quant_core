@@ -10,6 +10,8 @@ tabulate
 statsmodels
 matplotlib
 seaborn
-TA-Lib
+# TA-Lib
 yfinance
 hmmlearn
+streamlit
+plotly

@@ -4,11 +4,14 @@ This documentation provides a detailed overview of the ibkr open-core algorithmi
 
 ## documentation index
 
+-   **[Market-Agnostic Framework](./market_agnostic_framework.md)**
+    -   **START HERE.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework to other markets.
+
 -   **[project plan](../PROJECT_PLAN.md)**
     -   outlines the planned phases and tasks for the project's development.
 
 -   **[core infrastructure](./core_infrastructure.md)**
-    -   explains the foundational modules for connecting to interactive brokers, loading data, and sending notifications.
+    -   explains the foundational modules, focusing on the IBKR Market Adapter as a concrete implementation of the core framework.
 
 -   **[feature engineering](./feature_engineering.md)**
     -   technical indicator definitions and usage.

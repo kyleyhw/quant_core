@@ -1,35 +1,40 @@
-# core infrastructure
+# Core Infrastructure: An Abstract Framework with a Concrete Implementation
 
-the core infrastructure of the trading bot is handled by a set of modules within the `src/` directory. these modules provide the foundational services needed for the bot to operate, including connecting to the broker, fetching data, and sending notifications.
+The core infrastructure of the trading bot is defined by a market-agnostic framework centered around a set of abstract interfaces. The concrete, operational logic for a specific market—in this case, Interactive Brokers—is provided as an **instantiation** of this framework.
 
-## ibkr connection (`src/connection.py`)
+## 1. The Abstract Framework (`src/interfaces.py`)
 
-### purpose
-the `connection.py` module is responsible for establishing and managing the connection to the interactive brokers (ibkr) trader workstation (tws) or gateway. it abstracts the complexities of the `ib_insync` library's connection handling into a simple, reusable class.
+The foundation of the entire system is the set of abstract base classes in `src/interfaces.py`. These interfaces define a "contract" for what a market implementation must provide:
 
-### design and logic
--   **asynchronous operations**: the entire connection logic was refactored to be fully asynchronous using python's `asyncio` library. this is a critical design choice because `ib_insync` is an async-native library. using `async`/`await` ensures that network operations (like connecting or requesting data) are non-blocking, allowing the bot to remain responsive.
--   **`ibconnection` class**: this class encapsulates the `ib_insync.ib` object. a single instance of this class can be created and passed to other modules (like the `dataloader`), ensuring that all parts of the application share the same connection. this is an example of **dependency injection**.
--   **environment variables**: to maintain security and avoid hard-coding credentials, the connection parameters (host, port, client id) are loaded from a `.env` file using the `python-dotenv` library. this allows for different configurations between development and production environments without code changes. the `.env` file is explicitly listed in `.gitignore` to prevent it from being committed to the repository.
+-   **`IConnection`**: A contract for connecting to and disconnecting from a broker.
+-   **`IDataLoader`**: A contract for fetching historical market data.
+-   **`IExecutionHandler`**: A contract for placing and managing orders.
+-   **`IMarketAdapter`**: A composite class that bundles the above components into a single, cohesive "plug-in" for a market.
 
-## data loading (`src/data_loader.py`)
+For more details, refer to the main **[Market-Agnostic Framework](./market_agnostic_framework.md)** documentation.
 
-### purpose
-the `data_loader.py` module provides a standardized interface for fetching market data from ibkr. its primary goal is to ensure that data is retrieved and formatted consistently for use in other parts of the application, such as strategies or backtesting preparation.
+## 2. The Interactive Brokers (IBKR) Market Adapter
 
-### design and logic
--   **`dataloader` class**: this class requires an active `ibconnection` instance to be passed during initialization.
--   **asynchronous data fetching**: similar to the connection module, all data requests (`qualifycontractsasync`, `reqhistoricaldataasync`) are asynchronous to prevent blocking the application's event loop.
--   **robust contract creation**: the `create_contract` method was designed to be robust. instead of creating a contract with many `none` values (which the ibkr api can reject), it dynamically builds a dictionary of non-none parameters. this ensures that only relevant information is sent to the api, preventing errors for securities that do not have properties like `strike` or `right` (e.g., stocks, forex).
--   **standardized dataframe format**: the `get_historical_data` method returns a `pandas.dataframe` with standardized column names (`open`, `high`, `low`, `close`, `volume`). this consistency is crucial for the `backtesting` library and any other component that consumes this data.
+The first concrete implementation of the abstract framework is the IBKR Market Adapter, located in `src/market_adapters/ibkr/`. This adapter contains all the logic necessary to connect to, fetch data from, and execute trades with Interactive Brokers.
 
-## notifications (`src/notifications.py`)
+### IBKR Connection (`src/market_adapters/ibkr/connection.py`)
 
-### purpose
-the `notifications.py` module provides a simple way to send alerts to an external service. this is essential for monitoring the bot's status, receiving notifications about trades, or being alerted to critical errors that require manual intervention.
+-   **Purpose**: Implements the `IConnection` interface for Interactive Brokers.
+-   **Logic**: It encapsulates the `ib_insync.IB` object and manages the connection to TWS or Gateway. Connection parameters (host, port, etc.) are securely loaded from a `.env` file.
 
-### design and logic
--   **`notifier` class**: a simple class that handles the formatting and sending of messages.
--   **discord webhook**: the initial implementation uses discord webhooks, a common and easy-to-use notification method. the webhook url is loaded from the `discord_webhook_url` environment variable, again ensuring that this secret is not hard-coded.
--   **severity levels**: the `send` method includes a `severity` enum (`info`, `warning`, `error`, `critical`). this allows for color-coded and prioritized messages in discord, making it easy to distinguish between routine updates and urgent problems at a glance.
--   **error handling**: the `send` method includes `try...except` blocks to gracefully handle network errors or an unset webhook url, preventing the entire bot from crashing if a notification fails to send.
+### IBKR Data Loader (`src/market_adapters/ibkr/data_loader.py`)
+
+-   **Purpose**: Implements the `IDataLoader` interface.
+-   **Logic**: It requires an active `IBConnection` instance. Its `get_historical_data` method translates a generic request into a specific `ib_insync.reqHistoricalData` call and formats the returned data into a standardized `pandas.DataFrame`.
+
+### IBKR Execution Handler (`src/market_adapters/ibkr/execution.py`)
+
+-   **Purpose**: Implements the `IExecutionHandler` interface.
+-   **Logic**: This module is responsible for translating a generic order dictionary into IBKR-specific `Contract` and `Order` objects. It then uses the active connection to place, cancel, and monitor trades.
+
+## 3. The Market-Agnostic Safety Layer (`src/execution.py`)
+
+Crucially, the `ExecutionManager` that handles "fat finger" checks now sits **outside** of any market-specific implementation.
+
+-   **Purpose**: To provide a universal, market-agnostic safety layer.
+-   **Logic**: It operates on a standardized Python dictionary representing an order. It checks this dictionary for violations of hard-coded limits (e.g., max order size, max dollar value) *before* the order is ever passed to a concrete market adapter like the IBKR one. This ensures that the core risk management rules are enforced consistently, regardless of which market is being traded.

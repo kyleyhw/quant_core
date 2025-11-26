@@ -55,21 +55,15 @@ class SimpleMACrossover(BaseStrategy):
 
         # --- Entry Signal ---
         if cross_up:
-            # If we don't have an open position, execute a buy.
             if not self.position:
-                self.buy_instrument()
+                return "buy"
         
         # --- Exit Signal ---
-        # The base strategy handles the trailing stop-loss and take-profit.
-        # We can also add specific exit signals here. For example, closing
-        # the position if the MAs cross back down.
         elif cross_down:
             if self.position:
-                self.position.close()
+                return "sell"
 
-        # It's important to call the parent's next() method to ensure its
-        # logic (like take-profit) is also executed.
-        super().next()
+        return None
 
     def get_params(self) -> dict:
         """

@@ -4,7 +4,7 @@ import logging
 from typing import Optional, List
 
 from ib_insync import IB
-from ib_insync.objects import AccountValue
+from ib_insync import IB
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -14,9 +14,12 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-class IBConnection:
+from src.interfaces import IConnection
+
+class IBConnection(IConnection):
     """
-    Manages the connection to Interactive Brokers TWS or Gateway asynchronously.
+    Manages the connection to Interactive Brokers TWS or Gateway.
+    This class implements the IConnection interface for the IBKR market.
     """
 
     def __init__(self,
@@ -25,69 +28,66 @@ class IBConnection:
                  client_id: Optional[int] = None):
         """
         Initializes the IBConnection.
-        The event loop is no longer started here; it's managed by the application's entry point.
         """
         self.ib = IB()
         self.host = host or os.getenv('IB_HOST', '127.0.0.1')
-        self.port = port or int(os.getenv('IB_PORT', '7497'))
-        self.client_id = client_id or int(os.getenv('IB_CLIENT_ID', '1'))
+        self.port = port or int(os.getenv('IB_PORT', 7497))
+        self.client_id = client_id or int(os.getenv('IB_CLIENT_ID', 1))
         logging.info(f"Initialized IBConnection with host={self.host}, port={self.port}, client_id={self.client_id}")
 
-    async def connect(self) -> bool:
+    def connect(self) -> None:
         """
-        Establishes connection to IB TWS/Gateway asynchronously.
+        Establishes a connection to the IB TWS/Gateway.
+        `ib_insync` manages the connection and event loop in a background thread.
         """
         try:
             if not self.ib.isConnected():
-                # Use the async version of connect
-                await self.ib.connectAsync(self.host, self.port, self.client_id)
-                # The server version is already logged by ib_insync, so a custom log is not needed.
-                logging.info(f"Successfully connected to IB TWS/Gateway.")
+                self.ib.connect(self.host, self.port, self.client_id)
+                logging.info("Successfully connected to IB TWS/Gateway.")
             else:
                 logging.info("Already connected to IB TWS/Gateway.")
-            return True
         except Exception as e:
             logging.error(f"Failed to connect to IB TWS/Gateway: {e}")
-            return False
+            raise  # Re-raise the exception to be handled by the caller
 
-    async def disconnect(self) -> None:
+    def disconnect(self) -> None:
         """
-        Disconnects from IB TWS/Gateway asynchronously.
+        Disconnects from the IB TWS/Gateway.
         """
         if self.ib.isConnected():
-            self.ib.disconnect()  # disconnect() is synchronous but should be called on a connected client
+            self.ib.disconnect()
             logging.info("Disconnected from IB TWS/Gateway.")
         else:
             logging.info("Not connected to IB TWS/Gateway.")
 
-    @property
     def is_connected(self) -> bool:
         """
         Checks if the connection to IB TWS/Gateway is active.
         """
         return self.ib.isConnected()
 
-    async def get_account_summary(self, account: str = '') -> List[AccountValue]:
+    def get_account_summary(self) -> List[AccountValue]:
         """
-        Retrieves the account summary from IB asynchronously.
+        Retrieves the account summary from IB.
+        Note: This is an example of a method specific to this concrete
+        implementation and not part of the generic IConnection interface.
         """
-        if not self.is_connected:
+        if not self.is_connected():
             logging.error("Not connected to IB. Cannot fetch account summary.")
             return []
-        # Use the async version of accountSummary
-        return await self.ib.accountSummaryAsync(account)
+        return self.ib.accountSummary()
 
 
-async def main():
+def main():
     """
-    Main async function to demonstrate IBConnection usage.
+    Main function to demonstrate IBConnection usage.
     """
     conn = IBConnection()
     try:
-        if await conn.connect():
+        conn.connect()
+        if conn.is_connected():
             print("Connection successful! Getting account summary...")
-            # Await the async method
-            summary = await conn.get_account_summary()
+            summary = conn.get_account_summary()
             if not summary:
                 print("Could not retrieve account summary.")
             else:
@@ -96,16 +96,15 @@ async def main():
                         print(f"Net Liquidation: {item.value} {item.currency}")
                         break
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logging.error(f"An error occurred during the connection test: {e}")
     finally:
-        # Await the async method
-        await conn.disconnect()
+        conn.disconnect()
 
 
 if __name__ == "__main__":
     # Example usage:
     try:
-        asyncio.run(main())
+        main()
     except (KeyboardInterrupt, SystemExit):
         logging.info("Program terminated by user.")
     except Exception as e:
