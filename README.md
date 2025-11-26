@@ -2,6 +2,10 @@
 
 This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private.
 
+## Purpose
+
+The primary goal is to provide a robust, extensible foundation for developing and implementing algorithmic trading strategies. The framework is designed to evolve from traditional technical analysis to advanced Machine Learning models, with a consistent and strong emphasis on risk management, regardless of the underlying market.
+
 While its initial concrete implementation is for Interactive Brokers (IBKR), the framework is fundamentally designed to be extended to any market or broker API.
 
 ## Core Architecture: A Market-Agnostic Framework
@@ -22,6 +26,12 @@ The framework leverages the following key technologies:
 *   **Machine Learning:** `xgboost`, `scikit-learn`
 *   **Operations:** `python-dotenv`, `requests`
 
+## Project Plan
+
+For a detailed roadmap of the project's development phases and tasks, refer to the project plan:
+
+*   **[Project Plan](./PROJECT_PLAN.md)**
+
 ## Project Documentation Hub
 
 This documentation provides a detailed overview of the framework and its IBKR implementation.
@@ -29,16 +39,23 @@ This documentation provides a detailed overview of the framework and its IBKR im
 ### Documentation Index
 
 1.  **[Market-Agnostic Framework](./docs/market_agnostic_framework.md)**
-    -   **START HERE.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework to other markets.
+    -   **START HERE.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework.
 
 2.  **[Core Infrastructure](./docs/core_infrastructure.md)**
-    -   Explains the foundational modules, including the IBKR Market Adapter implementation.
+    -   Explains the foundational modules, focusing on the IBKR Market Adapter as a concrete implementation of the core framework.
 
 3.  **[Strategy Development](./docs/strategy_development.md)**
     -   Details the base strategy class, risk management, and example strategies.
 
 4.  **[Backtesting and Reporting](./docs/backtesting_and_reporting.md)**
     -   Covers the process of running backtests and generating performance reports.
+
+5.  **[Interpreting Reports](./docs/interpreting_report.md)**
+    -   Provides detailed explanations of the various performance metrics found in backtest reports.
+
+## Sample Backtest Reports
+
+View the generated backtest reports and plots in the [reports/](./reports/) directory. These reports demonstrate the performance of various strategies against historical data.
 
 ## Directory Structure
 
@@ -64,7 +81,7 @@ ibkr_quant_core/
 │   │       └── execution.py
 │   ├── execution.py      # Market-agnostic safety check layer
 │   ├── feature_engineering.py
-│   └── ...
+│   └── notifications.py
 └── strategies/
     ├── base_strategy.py  # Parent class for all strategies (for backtesting & live)
     └── private/          # Git Submodule for proprietary strategies
@@ -72,35 +89,49 @@ ibkr_quant_core/
 
 ## Getting Started
 
-1.  **Clone the repository:**
+1.  **Clone the repository and its submodules:**
     ```bash
     git clone --recurse-submodules [repository-url]
     cd ibkr_quant_core
     ```
-2.  **Install dependencies:**
-    It is recommended to use a virtual environment. The core framework can be installed as an editable package. For the IBKR adapter, install the `[ibkr]` extras.
+2.  **Install dependencies in a virtual environment:**
+    Install the core framework in editable mode. To include the Interactive Brokers functionality, specify the `[ibkr]` extra.
     ```bash
     pip install -e .[ibkr]
     ```
 3.  **Set up environment variables:**
-    Create a `.env` file in the root directory for IBKR TWS/Gateway connection details.
-4.  **Run backtests:**
-    Utilize the benchmark script to evaluate strategy performance.
+    Create a `.env` file in the root directory for sensitive information (e.g., IBKR TWS/Gateway connection details, notification webhook URLs).
+4.  **Connect to IBKR TWS/Gateway:**
+    Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
+5.  **Run backtests:**
+    Utilize the benchmark script to evaluate strategy performance against historical data.
     ```bash
     python run_backtesting/benchmark.py
     ```
 
 ## Core Architectural Rules
 
-### 1. Extensibility
-New markets can be added by creating a new adapter in `src/market_adapters/` and implementing the classes from `src/interfaces.py`. The core logic in strategies should not be changed.
+### 1. Extensibility via Market Adapters
+The framework is designed to be extended. New markets can be added by creating a new adapter in `src/market_adapters/` and implementing the classes defined in `src/interfaces.py`. The core logic in strategies should remain unchanged.
 
 ### 2. Machine Learning Workflow (Prevention of Skew)
-- **Training:** Happens in `research/`. Saves models to `models/`.
-- **Inference:** Happens in `strategies/`. Loads models from `models/`.
-- **Feature Consistency:** Both Training and Inference **MUST** import features from `src/feature_engineering.py`. This is critical to prevent training-serving skew.
+- **Training:** Occurs in the `research/` directory. Trained models are saved to `models/`.
+- **Inference:** Occurs within strategies. Models are loaded from `models/`.
+- **Feature Consistency:** Both training and inference code **MUST** import feature generation logic (e.g., indicators) from `src/feature_engineering.py`. This is a critical rule to prevent training-serving skew.
 
 ### 3. Execution & Safety (The "Fat Finger" Layer)
-- **Position Sizing:** Calculated in `base_strategy.py`.
-- **Hard Limits:** The market-agnostic `src/execution.py` enforces safety limits (max shares, max dollar value) on a generic order dictionary before it is passed to a market adapter.
+- **Position Sizing:** Calculated dynamically in `strategies/base_strategy.py`.
+- **Hard Limits:** The market-agnostic `src/execution.py` module enforces hard safety limits (e.g., `MAX_SHARES_PER_ORDER`, `MAX_DOLLAR_VALUE_PER_ORDER`) on a generic order dictionary *before* it is passed to a specific market adapter.
 - If a strategy generates an order that exceeds these limits, the system **MUST** raise an `Exception` and send a critical notification.
+
+### 4. Notifications
+- The system defines a `Notifier` class in `src/notifications.py`.
+- **Triggers:**
+  - **Critical:** Connection loss, Order Rejection, "Fat Finger" block.
+  - **Info:** Trade execution, Daily P&L summary.
+
+## Development Guidelines
+- **Type Hinting:** All functions must have Python type hints.
+- **Documentation:** Docstrings should focus on **"Why"** a component exists, not just "What" it does.
+- **Backtesting:** Assume a realistic **0.005 (0.5%)** for commission and slippage to avoid over-optimistic results.
+- **Benchmarking:** Use the **Sharpe Ratio** as the primary metric for comparing strategies, not total return.

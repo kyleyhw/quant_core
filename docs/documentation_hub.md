@@ -1,35 +1,29 @@
-# documentation hub
+# Documentation Hub
 
-This documentation provides a detailed overview of the ibkr open-core algorithmic trading bot. Each section covers a specific part of the system's architecture and logic.
+This documentation provides a detailed overview of the `quant_core` framework and its components. Each section covers a specific part of the system's architecture and logic.
 
-## documentation index
+## Documentation Index
 
 -   **[Market-Agnostic Framework](./market_agnostic_framework.md)**
-    -   **START HERE.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework to other markets.
+    -   **START HERE.** Explains the core plug-and-play architecture, abstract interfaces, and the process for extending the framework with new market adapters.
 
--   **[project plan](../PROJECT_PLAN.md)**
-    -   outlines the planned phases and tasks for the project's development.
+-   **[Core Infrastructure](./core_infrastructure.md)**
+    -   Explains the foundational modules, focusing on the **IBKR Market Adapter** as the first concrete implementation of the core framework interfaces.
 
--   **[core infrastructure](./core_infrastructure.md)**
-    -   explains the foundational modules, focusing on the IBKR Market Adapter as a concrete implementation of the core framework.
+-   **[Strategy Development](./strategy_development.md)**
+    -   Details the `BaseStrategy` class, the risk management framework, and the implementation of example strategies.
+        *   **[Simple MA Crossover](./strategies/simple_ma_crossover.md)**: Mathematical formulation for the simple moving average crossover strategy.
+        *   **[RSI 2-Period](./strategies/rsi_2_period.md)**: Mathematical formulation for the 2-period Relative Strength Index strategy.
+        *   **[Bollinger Bands](./strategies/bollinger_bands.md)**: Mathematical formulation for the Bollinger Bands volatility strategy.
 
--   **[feature engineering](./feature_engineering.md)**
-    -   technical indicator definitions and usage.
+-   **[Backtesting and Reporting](./backtesting_and_reporting.md)**
+    -   Covers the process of running backtests, generating performance reports, and interpreting the results.
 
--   **[strategy development](./strategy_development.md)**
-    -   details the base strategy class, risk management framework, and the implementation of a simple example strategy.
-        *   **[simple ma crossover](./strategies/simple_ma_crossover.md)**: mathematical formulation for the simple ma crossover strategy.
-        *   **[rsi 2-period](./strategies/rsi_2_period.md)**: mathematical formulation for the rsi 2-period strategy.
-        *   **[bollinger bands](./strategies/bollinger_bands.md)**: mathematical formulation for the bollinger bands strategy.
+-   **[Interpreting Report](./interpreting_report.md)**
+    -   Provides detailed explanations of the various performance metrics found in backtest reports.
 
--   **[backtesting and reporting](./run_backtesting/backtesting_and_reporting.md)**
-    -   covers the process of running backtests, generating performance reports, and interpreting the results.
+-   **[Safety & Recovery](./safety_and_recovery.md)**
+    -   Details the "fat finger" hard limits, risk management settings, and protocols for handling system crashes.
 
--   **[interpreting report](./interpreting_report.md)**
-    -   provides detailed explanations of the various performance metrics found in backtest reports.
-
--   **[safety & recovery](./safety_and_recovery.md)**
-    -   details the "fat finger" hard limits, risk management settings, and protocols for handling system crashes.
-
--   **[financial glossary](./financial_glossary.md)**
-    -   definitions for common financial terms.
+-   **[Financial Glossary](./financial_glossary.md)**
+    -   Definitions for common financial terms used throughout the project.
