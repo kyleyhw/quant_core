@@ -124,12 +124,48 @@ if not download_mode: # Corresponds to "Use Existing Data"
     is_pairs_strategy = "PairsTrading" in selected_strategy_name
     
     if is_pairs_strategy:
-        st.sidebar.write("Select a pre-defined asset pair.")
-        pair_assets = [asset for asset in all_assets if '-' in asset]
-        if not pair_assets:
-            st.sidebar.warning("No pairs data found.")
+        st.sidebar.write("Select assets for the pair (Select 2).")
+        # Filter out pre-combined pairs from the list if we want to force individual selection, 
+        # or keep them. The user wants "individual data files".
+        # Let's show single assets.
+        single_assets = [asset for asset in all_assets if '-' not in asset]
+        if not single_assets:
+            st.sidebar.warning("No single-asset data found.")
             st.stop()
-        selected_asset = st.sidebar.selectbox("Select Asset Pair", pair_assets)
+            
+        selected_assets = st.sidebar.multiselect("Select Assets", single_assets, default=single_assets[:2] if len(single_assets) >= 2 else None)
+        
+        if len(selected_assets) == 2:
+            # Load and merge
+            dfs = []
+            for asset in selected_assets:
+                d = utils.load_asset_data(asset, assets_map)
+                if d is not None:
+                    dfs.append(d)
+            
+            if len(dfs) == 2:
+                # Merge logic similar to run_backtest.py
+                df1 = dfs[0].add_suffix('_1')
+                df2 = dfs[1].add_suffix('_2')
+                df = pd.merge(df1, df2, left_index=True, right_index=True, how='inner')
+                
+                # Map Asset 1 back to standard OHLCV for Backtesting.py execution
+                df['Open'] = df['Open_1']
+                df['High'] = df['High_1']
+                df['Low'] = df['Low_1']
+                df['Close'] = df['Close_1']
+                df['Volume'] = df['Volume_1']
+                
+                selected_asset = f"{selected_assets[0]}-{selected_assets[1]}" # Construct a name
+            else:
+                st.error("Failed to load data for selected assets.")
+                st.stop()
+        elif len(selected_assets) > 0:
+             st.warning("Please select exactly 2 assets.")
+             selected_asset = None # Prevent running
+        else:
+             selected_asset = None
+
     else:
         st.sidebar.write("Select a single asset.")
         single_assets = [asset for asset in all_assets if '-' not in asset]
@@ -139,12 +175,12 @@ if not download_mode: # Corresponds to "Use Existing Data"
         
         selected_asset = st.sidebar.selectbox("Select Asset", single_assets)
         
-    # Load from local file
-    if selected_asset:
-        df = utils.load_asset_data(selected_asset, assets_map)
-        if df is None:
-            st.error(f"Failed to load data for {selected_asset}")
-            st.stop()
+        # Load from local file
+        if selected_asset:
+            df = utils.load_asset_data(selected_asset, assets_map)
+            if df is None:
+                st.error(f"Failed to load data for {selected_asset}")
+                st.stop()
 
 else: # Corresponds to "Download New Data"
     st.sidebar.subheader("Download New Data")
