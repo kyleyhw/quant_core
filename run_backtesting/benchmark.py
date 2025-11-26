@@ -66,7 +66,7 @@ def discover_strategies():
     
     # Define search paths for public and private strategies
     public_path = Path(project_root) / 'strategies'
-    private_path = Path(project_root) / 'private_strategies' / 'private_strategies'
+    private_path = Path(project_root) / 'strategies_private' / 'private_strategies'
     search_paths = [public_path]
     
     private_strategies_available = private_path.exists() and any(private_path.iterdir())
@@ -87,7 +87,7 @@ def discover_strategies():
                 for name, obj in inspect.getmembers(module, inspect.isclass):
                     # Check if it's a valid, non-base strategy class
                     if issubclass(obj, (Strategy, BaseStrategy)) and obj not in (Strategy, BaseStrategy):
-                        scope = "private" if "private_strategies" in module_name else "public"
+                        scope = "private" if "strategies_private" in module_name else "public"
                         
                         # Check if it's a meta-strategy (designed to wrap another)
                         # We identify meta-strategies by looking for an 'underlying_strategy' parameter
@@ -386,7 +386,7 @@ def run_benchmark(scope: str, data_path: str = None):
     
     output_dir = 'reports'
     if scope == 'private' or (scope == 'all' and any(s['scope'] == 'private' for s in strategies_to_run)):
-        private_reports_dir = os.path.join('strategies', 'private', 'reports')
+        private_reports_dir = os.path.join('strategies_private', 'private_strategies', 'reports')
         if os.path.exists(os.path.dirname(private_reports_dir)):
              output_dir = private_reports_dir
     os.makedirs(output_dir, exist_ok=True)

@@ -21,7 +21,7 @@ def discover_strategies() -> dict:
     strategies = {}
     
     public_path = Path(project_root) / 'strategies'
-    private_path = public_path / 'private' / 'private_strategies'
+    private_path = public_path / 'private' / 'strategies_private'
     search_paths = [public_path]
     
     if private_path.exists() and any(private_path.iterdir()):
