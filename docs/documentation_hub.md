@@ -5,7 +5,7 @@ This documentation provides a detailed overview of the `quant_core` framework an
 ## Documentation Index
 
 -   **[Market-Agnostic Framework](./market_agnostic_framework.md)**
-    -   **START HERE.** Explains the core plug-and-play architecture, abstract interfaces, and the process for extending the framework with new market adapters.
+    -   **The best place to start.** Explains the core plug-and-play architecture, abstract interfaces, and the process for extending the framework with new market adapters.
 
 -   **[Core Infrastructure](./core_infrastructure.md)**
     -   Explains the foundational modules, focusing on the **IBKR Market Adapter** as the first concrete implementation of the core framework interfaces.

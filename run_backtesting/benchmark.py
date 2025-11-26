@@ -159,8 +159,8 @@ def run_benchmark(scope: str, data_path: str = None):
         strategies_to_run = standalone_strategies + meta_strategies
     elif scope == 'private':
         strategies_to_run = [s for s in standalone_strategies if s['scope'] == 'private'] + meta_strategies
-    else:
-        strategies_to_run = []
+    else:  # 'public'
+        strategies_to_run = [s for s in standalone_strategies if s['scope'] == 'public']
 
     # --- Data Loading & Asset Discovery ---
     assets_map = {} # { 'Asset_Name': {'data': DataFrame, 'source': str} }

@@ -39,7 +39,7 @@ This documentation provides a detailed overview of the framework and its IBKR im
 ### Documentation Index
 
 1.  **[Market-Agnostic Framework](./docs/market_agnostic_framework.md)**
-    -   **START HERE.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework.
+    -   **The best place to start.** Explains the core plug-and-play architecture, interfaces, and how to extend the framework.
 
 2.  **[Core Infrastructure](./docs/core_infrastructure.md)**
     -   Explains the foundational modules, focusing on the IBKR Market Adapter as a concrete implementation of the core framework.
@@ -55,7 +55,10 @@ This documentation provides a detailed overview of the framework and its IBKR im
 
 ## Sample Backtest Reports
 
-View the generated backtest reports and plots in the [reports/](./reports/) directory. These reports demonstrate the performance of various strategies against historical data.
+To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
+
+*   **Latest Public Benchmark Report:** [./reports/benchmark_report_multi_asset_20251126_150127.md](./reports/benchmark_report_multi_asset_20251126_150127.md)
+*   **Individual Strategy Reports:** View all generated reports and plots in the [reports/](./reports/) directory.
 
 ## Directory Structure
 
