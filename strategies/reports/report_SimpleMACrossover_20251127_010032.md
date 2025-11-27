@@ -1,6 +1,6 @@
 # Backtest Report: SimpleMACrossover
 
-**Run Date:** 2025-11-27 00:43:29
+**Run Date:** 2025-11-27 01:00:32
 
 ## Data Configuration
 - **Data Source:** `['data/benchmark/SPY_2024-10-01_2025-11-25.csv']`
@@ -46,7 +46,7 @@
 | Kelly Criterion        | -0.1777822487095097  |
 
 ## Equity Curve
-[View interactive plot](backtest_SimpleMACrossover_20251127_004329.html)
+[View interactive plot](backtest_SimpleMACrossover_20251127_010032.html)
 
 ## Trade Log
 |    |   Size |   EntryBar |   ExitBar |   EntryPrice |   ExitPrice | SL   | TP   |       PnL |   Commission |   ReturnPct | EntryTime        | ExitTime         | Duration          | Tag   |
