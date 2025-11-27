@@ -223,14 +223,22 @@ def download_data_cached(tickers, start_date, end_date):
             return None
         
         # Clean and format data
-        if len(tickers) == 1:
-            # For single ticker, yfinance returns a simple DataFrame
-            # Ensure columns are standard capitalized format for backtesting.py
-            data.columns = [str(col).capitalize() for col in data.columns]
-        else:
-            # Multi-ticker download returns a MultiIndex
-            data.columns.names = ['Price', 'Ticker']
+        # Flatten MultiIndex if present (yfinance often returns Price/Ticker levels)
+        if isinstance(data.columns, pd.MultiIndex):
+            # If we requested a single ticker, we might still get a MultiIndex.
+            # We need to drop the Ticker level if it exists and we only have one ticker.
+            if len(tickers) == 1:
+                data = data.xs(tickers[0], axis=1, level=1)
             
+        # Ensure columns are standard capitalized format for backtesting.py
+        # This handles both 'Open' and 'open', and ensures we have the right columns
+        data.columns = [str(col).capitalize() for col in data.columns]
+        
+        # Filter for required columns
+        required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+        available_cols = [col for col in required_cols if col in data.columns]
+        data = data[available_cols]
+
         data.index = pd.to_datetime(data.index, utc=True).tz_localize(None)
         data.index.name = 'Date'
         data.dropna(how='all', inplace=True) # Drop rows where all data is missing

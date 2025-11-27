@@ -201,21 +201,31 @@ else: # Corresponds to "Download New Data"
             df.columns = [col.capitalize() for col in df.columns]
             
 
-# --- Date Range Filter (now applies to both modes) ---
+# --- Date Range Filter ---
 if not df.empty:
-    st.sidebar.subheader("Date Range Filter")
-    min_date = df.index.min().date()
-    max_date = df.index.max().date()
-    
-    start_date = st.sidebar.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
-    end_date = st.sidebar.date_input("End Date", max_date, min_value=start_date, max_value=max_date)
-
-    if start_date <= end_date:
+    # If in download mode, we use the download dates as the backtest range
+    # So we don't need a second filter.
+    if download_mode:
+        start_date = start_date_download
+        end_date = end_date_download
+        # Ensure df is sliced to this range (it should be already, but good to be safe)
         mask = (df.index.date >= start_date) & (df.index.date <= end_date)
         df = df.loc[mask]
+        st.sidebar.info(f"Backtest Range: {start_date} to {end_date}")
     else:
-        st.sidebar.error("Error: Start date must be before end date.")
-        st.stop()
+        st.sidebar.subheader("Date Range Filter")
+        min_date = df.index.min().date()
+        max_date = df.index.max().date()
+        
+        start_date = st.sidebar.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
+        end_date = st.sidebar.date_input("End Date", max_date, min_value=start_date, max_value=max_date)
+
+        if start_date <= end_date:
+            mask = (df.index.date >= start_date) & (df.index.date <= end_date)
+            df = df.loc[mask]
+        else:
+            st.sidebar.error("Error: Start date must be before end date.")
+            st.stop()
 
 # 5. Run Backtest Button
 if st.sidebar.button("Run Backtest"):
