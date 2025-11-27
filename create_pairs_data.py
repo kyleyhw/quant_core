@@ -13,5 +13,7 @@ ko.columns = [f"{col}_2" for col in ko.columns]
 pair_data = pd.concat([pep, ko], axis=1).dropna()
 
 # Save
-pair_data.to_csv(os.path.join(data_dir, "PEP-KO_2024-10-01_2025-11-25.csv"))
-print("Created PEP-KO_2024-10-01_2025-11-25.csv")
+# Save
+# pair_data.to_csv(os.path.join(data_dir, "PEP-KO_2024-10-01_2025-11-25.csv"))
+# print("Created PEP-KO_2024-10-01_2025-11-25.csv")
+print("Aggregation is now done in memory during backtest execution. This script is deprecated.")

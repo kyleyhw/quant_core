@@ -1,6 +1,6 @@
 # Backtest Report: RSI2PeriodStrategy
 
-**Run Date:** 2025-11-26 23:49:31
+**Run Date:** 2025-11-27 00:43:32
 
 ## Data Configuration
 - **Data Source:** `['data/benchmark/SPY_2024-10-01_2025-11-25.csv']`
@@ -46,7 +46,7 @@
 | Kelly Criterion        | 0.2521993087716509  |
 
 ## Equity Curve
-[View interactive plot](backtest_RSI2PeriodStrategy_20251126_234931.html)
+[View interactive plot](backtest_RSI2PeriodStrategy_20251127_004332.html)
 
 ## Trade Log
 |    |   Size |   EntryBar |   ExitBar |   EntryPrice |   ExitPrice | SL   | TP   |        PnL |   Commission |    ReturnPct | EntryTime        | ExitTime         | Duration         | Tag   |
