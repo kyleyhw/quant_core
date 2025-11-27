@@ -104,7 +104,9 @@ ibkr_quant_core/
     ```
 3.  **Set up environment variables:**
     Create a `.env` file in the root directory for sensitive information (e.g., IBKR connection details).
-4.  **Launch the Dashboard (UI):**
+4.  **Connect to IBKR TWS/Gateway:**
+    Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
+5.  **Launch the Dashboard (UI):**
     The project includes a Streamlit-based dashboard for easy backtesting and analysis.
     ```bash
     python -m streamlit run dashboard/app.py
@@ -115,7 +117,7 @@ ibkr_quant_core/
     - **Date Range**: Adjust the start and end dates for the backtest.
     - **Run Backtest**: Click the "Run Backtest" button to execute.
     - **View Results**: Analyze the interactive plots, metrics, and trade logs.
-5.  **Run Command-Line Backtests:**
+6.  **Run Command-Line Backtests:**
     Alternatively, use the benchmark script to evaluate strategy performance via CLI.
     ```bash
     python run_backtesting/benchmark.py
