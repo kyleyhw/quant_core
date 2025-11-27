@@ -45,9 +45,9 @@ class SignalExecutor(Strategy):
 # This allows us to map specific data files to strategies by name
 # and define which meta-strategies should run with which underlying strategies.
 STRATEGY_CONFIG = {
-    "PairsTradingStrategy": {"data": "data/PEP_KO_2024_2025.csv"},
-    "PortfolioAllocationStrategy": {"data": "data/SPY_2024_2025.csv"},
-    "EnsembleSignalStrategy": {"data": "data/SPY_2024_2025.csv"},
+    "PairsTradingStrategy": {"data": None}, # Requires multi-asset data, handled separately or skipped
+    "PortfolioAllocationStrategy": {"data": "data/benchmark/SPY_2024-10-01_2025-11-25.csv"},
+    "EnsembleSignalStrategy": {"data": "data/benchmark/SPY_2024-10-01_2025-11-25.csv"},
     "MetaRegimeFilterStrategy": {
         "underlying": "SimpleMACrossover",
         "params": {"strategy_type": "trend"}
