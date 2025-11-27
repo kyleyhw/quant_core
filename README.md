@@ -57,13 +57,13 @@ This documentation provides a detailed overview of the framework and its IBKR im
 
 To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
 
-*   **Latest Public Benchmark Report:** [./strategies/reports/benchmark_report_multi_asset_20251126_150127.md](./strategies/reports/benchmark_report_multi_asset_20251126_150127.md)
+*   **Latest Public Benchmark Report:** [./strategies/reports/benchmark_report_multi_asset_20251127_010136.md](./strategies/reports/benchmark_report_multi_asset_20251127_010136.md)
 *   **Individual Strategy Reports:** View all generated reports and plots in the [strategies/reports/](./strategies/reports/) directory.
 
 ## Directory Structure
 
 ```
-ibkr_quant_core/
+quant_core/
 ├── .env                  # Local environment variables (IGNORED BY GIT)
 ├── README.md             # This file: Project overview and high-level documentation
 ├── requirements.txt      # Project dependencies
@@ -95,7 +95,7 @@ ibkr_quant_core/
 1.  **Clone the repository and its submodules:**
     ```bash
     git clone --recurse-submodules [repository-url]
-    cd ibkr_quant_core
+    cd quant_core
     ```
 2.  **Install dependencies:**
     Install the core framework in editable mode with IBKR support.
