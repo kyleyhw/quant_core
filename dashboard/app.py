@@ -80,21 +80,15 @@ st.title("Algorithmic Trading Dashboard")
 
 st.sidebar.header("Configuration")
 
-# --- Private Mode Status Indicator ---
-# Debug: Print environment variables to console
-print(f"DEBUG: QUANT_CORE_PRIVATE_MODE = {os.environ.get('QUANT_CORE_PRIVATE_MODE')}")
-
-is_private_mode_active = os.environ.get('QUANT_CORE_PRIVATE_MODE', 'false').lower() == 'true'
+# --- Private Mode Toggle ---
+is_private_mode_active = st.sidebar.checkbox("Enable Private Mode", value=False, help="Check to show private strategies.")
 
 if is_private_mode_active:
     st.sidebar.success("Private Mode is ON")
 else:
-    st.sidebar.info(
-        "**Public Mode is ON.** To enable Private Mode and see your private strategies, "
-        "stop this server and relaunch it with the `QUANT_CORE_PRIVATE_MODE` "
-        "environment variable set to `true`."
-    )
-    st.sidebar.code("set QUANT_CORE_PRIVATE_MODE=true\nstreamlit run dashboard/app.py", language="shell")
+    st.sidebar.info("Private Mode is OFF. Private strategies are hidden.")
+
+
 
 
 # --- Mode Selection (Slider Switch) ---
