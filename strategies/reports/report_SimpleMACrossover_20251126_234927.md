@@ -1,9 +1,9 @@
 # Backtest Report: SimpleMACrossover
 
-**Run Date:** 2025-11-26 21:13:28
+**Run Date:** 2025-11-26 23:49:28
 
 ## Data Configuration
-- **Data Source:** `data/benchmark/SPY_2024-10-01_2025-11-25.csv`
+- **Data Source:** `['data/benchmark/SPY_2024-10-01_2025-11-25.csv']`
 - **Date Range:** 2024-10-01 to 2025-11-24
 - **Commission Model:** IBKR Tiered
 
@@ -18,7 +18,7 @@
 | Exposure Time [%]      | 89.96539792387543    |
 | Equity Final [$]       | 8320.955180683837    |
 | Equity Peak [$]        | 10016.71016906984    |
-| Commissions [$]        | 7.000000000000001    |
+| Commissions [$]        | 7.0                  |
 | Return [%]             | -16.790448193161627  |
 | Buy & Hold Return [%]  | 19.035570937624396   |
 | Return (Ann.) [%]      | -14.809096324742764  |
@@ -46,7 +46,7 @@
 | Kelly Criterion        | -0.1777822487095097  |
 
 ## Equity Curve
-[View interactive plot](backtest_SimpleMACrossover_20251126_211327.html)
+[View interactive plot](backtest_SimpleMACrossover_20251126_234927.html)
 
 ## Trade Log
 |    |   Size |   EntryBar |   ExitBar |   EntryPrice |   ExitPrice | SL   | TP   |       PnL |   Commission |   ReturnPct | EntryTime        | ExitTime         | Duration          | Tag   |
