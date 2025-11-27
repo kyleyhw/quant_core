@@ -86,9 +86,37 @@ ibkr_quant_core/
 │   ├── feature_engineering.py
 │   └── notifications.py
 └── strategies/
-    Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
-5.  **Run backtests:**
-    Utilize the benchmark script to evaluate strategy performance against historical data.
+    ├── base_strategy.py  # Parent class for all strategies (for backtesting & live)
+    └── private/          # Git Submodule for proprietary strategies
+```
+
+## Getting Started
+
+1.  **Clone the repository and its submodules:**
+    ```bash
+    git clone --recurse-submodules [repository-url]
+    cd ibkr_quant_core
+    ```
+2.  **Install dependencies:**
+    Install the core framework in editable mode with IBKR support.
+    ```bash
+    pip install -e .[ibkr]
+    ```
+3.  **Set up environment variables:**
+    Create a `.env` file in the root directory for sensitive information (e.g., IBKR connection details).
+4.  **Launch the Dashboard (UI):**
+    The project includes a Streamlit-based dashboard for easy backtesting and analysis.
+    ```bash
+    python -m streamlit run dashboard/app.py
+    ```
+    **Using the Dashboard:**
+    - **Select Strategy**: Choose a strategy from the sidebar.
+    - **Select Asset**: Choose an asset (e.g., SPY) or multiple assets for pair strategies.
+    - **Date Range**: Adjust the start and end dates for the backtest.
+    - **Run Backtest**: Click the "Run Backtest" button to execute.
+    - **View Results**: Analyze the interactive plots, metrics, and trade logs.
+5.  **Run Command-Line Backtests:**
+    Alternatively, use the benchmark script to evaluate strategy performance via CLI.
     ```bash
     python run_backtesting/benchmark.py
     ```
