@@ -86,25 +86,6 @@ ibkr_quant_core/
 │   ├── feature_engineering.py
 │   └── notifications.py
 └── strategies/
-    ├── base_strategy.py  # Parent class for all strategies (for backtesting & live)
-    └── private/          # Git Submodule for proprietary strategies
-```
-
-## Getting Started
-
-1.  **Clone the repository and its submodules:**
-    ```bash
-    git clone --recurse-submodules [repository-url]
-    cd ibkr_quant_core
-    ```
-2.  **Install dependencies in a virtual environment:**
-    Install the core framework in editable mode. To include the Interactive Brokers functionality, specify the `[ibkr]` extra.
-    ```bash
-    pip install -e .[ibkr]
-    ```
-3.  **Set up environment variables:**
-    Create a `.env` file in the root directory for sensitive information (e.g., IBKR TWS/Gateway connection details, notification webhook URLs).
-4.  **Connect to IBKR TWS/Gateway:**
     Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
 5.  **Run backtests:**
     Utilize the benchmark script to evaluate strategy performance against historical data.
