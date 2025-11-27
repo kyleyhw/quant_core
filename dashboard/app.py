@@ -81,20 +81,18 @@ st.title("Algorithmic Trading Dashboard")
 st.sidebar.header("Configuration")
 
 # --- Private Mode Toggle ---
-is_private_mode_active = st.sidebar.checkbox("Enable Private Mode", value=False, help="Check to show private strategies.")
+is_private_mode_active = st.sidebar.toggle("Enable Private Mode", value=False, help="Toggle to show/hide private strategies.")
 
 if is_private_mode_active:
     st.sidebar.success("Private Mode is ON")
 else:
     st.sidebar.info("Private Mode is OFF. Private strategies are hidden.")
 
-
-
-
 # --- Mode Selection (Slider Switch) ---
-download_mode = st.sidebar.toggle("Download New Data", key="mode_selection")
+download_mode = st.sidebar.toggle("Download New Data (Cache Only)", key="mode_selection", help="Download data temporarily for backtesting without saving to disk.")
 
 # 1. Strategy Selection
+# We need to call discover_strategies AFTER the toggle to ensure it picks up the new state
 strategies = utils.discover_strategies(private_mode=is_private_mode_active)
 all_strategies = strategies["standalone"]
 strategy_names = [s["name"] for s in all_strategies]
@@ -102,11 +100,6 @@ selected_strategy_name = st.sidebar.selectbox("Select Strategy", strategy_names)
 selected_strategy_config = next((s for s in all_strategies if s["name"] == selected_strategy_name), None)
 
 # 2. Commission Model Selection
-commission_model_name = st.sidebar.selectbox("Commission Model", list(COMMISSION_MODELS.keys()), index=0)
-selected_commission = COMMISSION_MODELS[commission_model_name]
-
-# 3. Asset & Data Selection (Conditional UI)
-df = pd.DataFrame()
 
 if not download_mode: # Corresponds to "Use Existing Data"
     st.sidebar.subheader("Asset Selection")
