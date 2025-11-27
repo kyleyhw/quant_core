@@ -117,6 +117,8 @@ ibkr_quant_core/
     - **Date Range**: Adjust the start and end dates for the backtest.
     - **Run Backtest**: Click the "Run Backtest" button to execute.
     - **View Results**: Analyze the interactive plots, metrics, and trade logs.
+    - **Private Mode**: Enable this checkbox to load proprietary strategies from the `strategies_private` submodule.
+    - **Download Data**: Enable this checkbox to force a fresh download of historical data from Yahoo Finance, overriding any locally cached files.
 6.  **Run Command-Line Backtests:**
     Alternatively, use the benchmark script to evaluate strategy performance via CLI.
     ```bash
