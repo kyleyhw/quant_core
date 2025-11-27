@@ -222,6 +222,7 @@ if not df.empty:
     else:
         st.sidebar.error("Error: Start date must be before end date.")
         st.stop()
+
 # 5. Run Backtest Button
 if st.sidebar.button("Run Backtest"):
     asset_name_display = selected_asset if not download_mode else tickers_input
@@ -242,10 +243,58 @@ if st.sidebar.button("Run Backtest"):
             if "PairsTrading" in selected_strategy_name and len(df.columns.levels) > 1:
                 pass # Already in the right multi-index format
             elif "PairsTrading" in selected_strategy_name:
-                st.error("Pairs trading requires 2 tickers. Please download data for 2 tickers.")
-                st.stop()
+                # Check if we have merged data (from multi-select)
+                if not any(col.endswith('_1') for col in df.columns):
+                     st.error("Pairs trading requires 2 tickers. Please select 2 assets.")
+                     st.stop()
             
+            bt = CustomBacktest(
+                df,
+                bt_strategy_class,
+                cash=10000, # Default cash
+                commission=selected_commission
+            )
+            
+            stats = bt.run()
+            st.subheader("Backtest Results")
+            
+            # 1. Metrics Table
+            # Filter out internal keys (starting with _)
+            stats_to_report = stats[~stats.index.str.startswith('_')]
+            st.dataframe(stats_to_report, use_container_width=True)
+            
+            # 2. Trade Log
+            trades = stats['_trades']
+            with st.expander("View Trade Log"):
+                if not trades.empty:
+                    # Format trade log for readability
+                    trades_formatted = trades.copy()
+                    if 'EntryTime' in trades_formatted.columns:
+                        trades_formatted['EntryTime'] = trades_formatted['EntryTime'].dt.strftime('%Y-%m-%d %H:%M')
+                    if 'ExitTime' in trades_formatted.columns:
+                        trades_formatted['ExitTime'] = trades_formatted['ExitTime'].dt.strftime('%Y-%m-%d %H:%M')
+                    st.dataframe(trades_formatted, use_container_width=True)
+                else:
+                    st.info("No trades executed.")
+
+            # 3. Plot
+            st.subheader("Equity Curve")
+            
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
+                bt.plot(filename=tmp.name, open_browser=False)
+                with open(tmp.name, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                st.components.v1.html(html_content, height=800, scrolling=True)
+            
+            try:
+                os.remove(tmp.name)
+            except:
+                pass
+
+        except Exception as e:
             st.error(f"An error occurred during backtest: {e}")
+            # st.exception(e) # Uncomment for full traceback
     else:
         st.warning("Please select a valid strategy and asset/data.")
 else:

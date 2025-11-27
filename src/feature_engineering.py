@@ -89,8 +89,17 @@ class FeatureEngineer:
         # For simplicity in standard OHLCV without intraday resets, we might skip or use a rolling VWAP approximation
         # df['VWAP'] = ta.vwap(df['high'], df['low'], df['close'], df['volume'])
 
-        return df
-        return df
+        # Reorder columns to match the expected feature order of the trained XGBoost models
+        expected_order = [
+            'close', 'high', 'low', 'open', 'volume', 
+            'SMA_50', 'SMA_200', 'EMA_20', 
+            'MACD_12_26_9', 'MACDS_12_26_9', 'MACDH_12_26_9', 
+            'RSI_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3', 
+            'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 
+            'ATR_14'
+        ]
+        
+        return df[expected_order]
 
     def get_required_lookback(self) -> int:
         """

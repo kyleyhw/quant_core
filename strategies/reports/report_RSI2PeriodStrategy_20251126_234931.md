@@ -1,9 +1,9 @@
 # Backtest Report: RSI2PeriodStrategy
 
-**Run Date:** 2025-11-26 21:13:17
+**Run Date:** 2025-11-26 23:49:31
 
 ## Data Configuration
-- **Data Source:** `data/benchmark/SPY_2024-10-01_2025-11-25.csv`
+- **Data Source:** `['data/benchmark/SPY_2024-10-01_2025-11-25.csv']`
 - **Date Range:** 2024-10-01 to 2025-11-24
 - **Commission Model:** IBKR Tiered
 
@@ -18,7 +18,7 @@
 | Exposure Time [%]      | 95.50173010380622   |
 | Equity Final [$]       | 12724.723293149686  |
 | Equity Peak [$]        | 13016.895699932502  |
-| Commissions [$]        | 37.1                |
+| Commissions [$]        | 37.099999999999994  |
 | Return [%]             | 27.247232931496857  |
 | Buy & Hold Return [%]  | 19.035570937624396  |
 | Return (Ann.) [%]      | 23.38161818562392   |
@@ -46,7 +46,7 @@
 | Kelly Criterion        | 0.2521993087716509  |
 
 ## Equity Curve
-[View interactive plot](backtest_RSI2PeriodStrategy_20251126_211316.html)
+[View interactive plot](backtest_RSI2PeriodStrategy_20251126_234931.html)
 
 ## Trade Log
 |    |   Size |   EntryBar |   ExitBar |   EntryPrice |   ExitPrice | SL   | TP   |        PnL |   Commission |    ReturnPct | EntryTime        | ExitTime         | Duration         | Tag   |
