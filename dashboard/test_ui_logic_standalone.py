@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-def load_csv(file_path):
+def load_csv(file_path: str) -> pd.DataFrame | None:
     try:
         df = pd.read_csv(file_path)
         df.rename(columns={'date': 'Date'}, inplace=True)
@@ -21,7 +21,7 @@ def load_csv(file_path):
         print(f"Error loading {file_path}: {e}")
         return None
 
-def test_merging():
+def test_merging() -> None:
     print("Testing Merging Logic...")
     file1 = "data/benchmark/PEP_2024-10-01_2025-11-25.csv"
     file2 = "data/benchmark/KO_2024-10-01_2025-11-25.csv"
@@ -32,6 +32,10 @@ def test_merging():
 
     df1 = load_csv(file1)
     df2 = load_csv(file2)
+    
+    if df1 is None or df2 is None:
+        print("Failed to load one or both dataframes.")
+        return
     
     print(f"Loaded PEP: {df1.shape}")
     print(f"Loaded KO: {df2.shape}")

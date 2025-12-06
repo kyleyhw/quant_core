@@ -107,7 +107,7 @@ class IMarketAdapter(ABC):
     data_loader: IDataLoader
     execution_handler: IExecutionHandler
 
-    def __init__(self, connection: IConnection, data_loader: IDataLoader, execution_handler: IExecutionHandler):
+    def __init__(self, connection: IConnection, data_loader: IDataLoader, execution_handler: IExecutionHandler) -> None:
         self.connection = connection
         self.data_loader = data_loader
         self.execution_handler = execution_handler

@@ -1,5 +1,6 @@
 import numpy as np
 from backtesting.lib import crossover
+from typing import Optional, Any
 
 from strategies.base_strategy import BaseStrategy
 
@@ -22,14 +23,14 @@ class SimpleMACrossover(BaseStrategy):
     fast_ma_period = 10  # Lookback period for the fast moving average
     slow_ma_period = 20  # Lookback period for the slow moving average
 
-    def init(self):
+    def init(self, **kwargs: Any) -> None:
         """
         Initializes the strategy. We no longer pre-calculate or access indicators here.
         """
         # Call the parent class's init to set up risk management
-        super().init()
+        super().init(**kwargs)
 
-    def next(self):
+    def next(self) -> None:
         """
         The main strategy logic loop, called for each data point (bar).
         """
@@ -54,15 +55,14 @@ class SimpleMACrossover(BaseStrategy):
         cross_down = (fast_ma_prev >= slow_ma_prev and fast_ma_val < slow_ma_val)
 
         # --- Entry Signal ---
-        # --- Entry Signal ---
         if cross_up:
-            return "buy"
+            if not self.position:
+                self.buy()
         
         # --- Exit Signal ---
         elif cross_down:
-            return "sell"
-
-        return None
+            if self.position:
+                self.position.close()
 
     def get_params(self) -> dict:
         """

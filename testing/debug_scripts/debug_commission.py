@@ -1,14 +1,15 @@
 from backtesting import Backtest, Strategy
 import pandas as pd
 import numpy as np
+from typing import Any
 
 class DummyStrategy(Strategy):
-    def init(self):
+    def init(self) -> None:
         pass
-    def next(self):
+    def next(self) -> None:
         self.buy()
 
-def dummy_commission(broker, trade, price):
+def dummy_commission(broker: Any, trade: Any, price: float) -> float:
     return 1.0
 
 # Create dummy data

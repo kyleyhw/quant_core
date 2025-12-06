@@ -8,6 +8,7 @@ import glob
 from pathlib import Path
 import pandas as pd
 from backtesting import Strategy
+from typing import List, Dict, Any, Optional, cast
 
 # --- Add project root to path ---
 # Assuming this file is in project_root/dashboard/utils.py
@@ -20,13 +21,13 @@ from strategies.base_strategy import BaseStrategy
 # Default Data Path
 DEFAULT_DATA_PATH = os.path.join(project_root, "data", "benchmark")
 
-def discover_strategies(private_mode=False):
+def discover_strategies(private_mode: bool = False) -> dict:
     """
     Dynamically discovers and imports strategies from the project directories.
     Returns a dictionary of strategies.
     If private_mode is True, it will also search the private strategies directory.
     """
-    strategies = {"standalone": [], "meta": {}}
+    strategies: dict[str, list[Any] | dict[str, Any]] = {"standalone": [], "meta": {}}
     
     # Define search paths for public and private strategies
     public_path = Path(project_root) / 'strategies'
@@ -75,15 +76,15 @@ def discover_strategies(private_mode=False):
                         }
                         
                         if is_meta:
-                            strategies["meta"][name] = config
+                            cast(dict, strategies["meta"])[name] = config
                         else:
-                            strategies["standalone"].append(config)
+                            cast(list, strategies["standalone"]).append(config)
 
             except ImportError as e:
                 print(f"Error importing module {module_name}: {e}")
 
     return strategies
-def get_data_files():
+def get_data_files() -> List[str]:
 
     """Scans all relevant data directories for CSV files."""
 
@@ -117,7 +118,7 @@ def get_data_files():
 
 
 
-def get_available_assets():
+def get_available_assets() -> Dict[str, str]:
     """
     Scans data files and builds a dictionary of available assets.
     It reads headers to find all tickers in multi-asset files.
@@ -162,7 +163,7 @@ def get_available_assets():
     return assets
 
 
-def load_asset_data(asset_name, assets_map):
+def load_asset_data(asset_name: str, assets_map: Dict[str, str]) -> Optional[pd.DataFrame]:
     """
     Loads data for a specific asset (ticker or pair) using the assets map.
     - For pairs (e.g., 'PEP-KO'), it loads the full multi-asset file.
@@ -209,7 +210,7 @@ def load_asset_data(asset_name, assets_map):
         print(f"Error loading data for {asset_name} from {file_path}: {e}")
         return None
 @st.cache_data
-def download_data_cached(tickers, start_date, end_date):
+def download_data_cached(tickers: List[str], start_date: Any, end_date: Any) -> Optional[pd.DataFrame]:
     """
     Downloads data from yfinance and caches it for the session.
     Returns a pandas DataFrame.

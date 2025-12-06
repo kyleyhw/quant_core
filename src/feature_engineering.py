@@ -8,7 +8,7 @@ class FeatureEngineer:
     Ensures consistency between Backtesting (Training) and Live Trading (Inference).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def calculate_features(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -25,15 +25,15 @@ class FeatureEngineer:
         df = df.copy()
         
         # Helper for RSI
-        def calculate_rsi(series, period=14):
-            delta = series.diff()
+        def calculate_rsi(series: pd.Series, period: int = 14) -> pd.Series:
+            delta = series.diff().astype(float)
             gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
             rs = gain / loss
             return 100 - (100 / (1 + rs))
 
         # Helper for Stochastic
-        def calculate_stoch(high, low, close, k_period=14, d_period=3):
+        def calculate_stoch(high: pd.Series, low: pd.Series, close: pd.Series, k_period: int = 14, d_period: int = 3) -> tuple[pd.Series, pd.Series]:
             low_min = low.rolling(window=k_period).min()
             high_max = high.rolling(window=k_period).max()
             k = 100 * ((close - low_min) / (high_max - low_min))
@@ -41,7 +41,7 @@ class FeatureEngineer:
             return k, d
 
         # Helper for ATR
-        def calculate_atr(high, low, close, period=14):
+        def calculate_atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
             tr1 = high - low
             tr2 = (high - close.shift()).abs()
             tr3 = (low - close.shift()).abs()

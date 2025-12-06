@@ -4,6 +4,8 @@ import plotly.graph_objects as go
 import sys
 import os
 import subprocess
+from typing import Type
+
 from backtesting import Backtest, Strategy
 from src.backtesting_extensions import CustomBacktest
 
@@ -12,11 +14,11 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from dashboard import utils
+from dashboard import dashboard_utils
 from src.commission_models import COMMISSION_MODELS
 
 # --- Signal Executor Factory ---
-def create_signal_executor(base_strategy_class):
+def create_signal_executor(base_strategy_class: Type[Strategy]) -> Type[Strategy]:
     """
     Creates a dynamic subclass of the given strategy class that interprets
     'buy'/'sell' return values from .next() as trade execution commands.
@@ -93,17 +95,20 @@ download_mode = st.sidebar.toggle("Download New Data (Cache Only)", key="mode_se
 
 # 1. Strategy Selection
 # We need to call discover_strategies AFTER the toggle to ensure it picks up the new state
-strategies = utils.discover_strategies(private_mode=is_private_mode_active)
+strategies = dashboard_utils.discover_strategies(private_mode=is_private_mode_active)
 all_strategies = strategies["standalone"]
 strategy_names = [s["name"] for s in all_strategies]
 selected_strategy_name = st.sidebar.selectbox("Select Strategy", strategy_names)
 selected_strategy_config = next((s for s in all_strategies if s["name"] == selected_strategy_name), None)
 
 # 2. Commission Model Selection
+commission_names = list(COMMISSION_MODELS.keys())
+selected_commission_name = st.sidebar.selectbox("Select Commission Model", commission_names)
+selected_commission = COMMISSION_MODELS[selected_commission_name]
 
 if not download_mode: # Corresponds to "Use Existing Data"
     st.sidebar.subheader("Asset Selection")
-    assets_map = utils.get_available_assets()
+    assets_map = dashboard_utils.get_available_assets()
     all_assets = sorted(list(assets_map.keys()))
     
     selected_asset = None
@@ -126,7 +131,7 @@ if not download_mode: # Corresponds to "Use Existing Data"
             # Load and merge
             dfs = []
             for asset in selected_assets:
-                d = utils.load_asset_data(asset, assets_map)
+                d = dashboard_utils.load_asset_data(asset, assets_map)
                 if d is not None:
                     dfs.append(d)
             
@@ -164,10 +169,11 @@ if not download_mode: # Corresponds to "Use Existing Data"
         
         # Load from local file
         if selected_asset:
-            df = utils.load_asset_data(selected_asset, assets_map)
-            if df is None:
+            df_loaded = dashboard_utils.load_asset_data(selected_asset, assets_map)
+            if df_loaded is None:
                 st.error(f"Failed to load data for {selected_asset}")
                 st.stop()
+            df = df_loaded
 
 else: # Corresponds to "Download New Data"
     st.sidebar.subheader("Download New Data")
@@ -185,12 +191,13 @@ else: # Corresponds to "Download New Data"
         tickers = [ticker.strip().upper() for ticker in tickers_input.split(',')]
         
         with st.spinner(f"Downloading data for {', '.join(tickers)}..."):
-            df = utils.download_data_cached(tickers, start_date_download, end_date_download)
+            df_loaded = dashboard_utils.download_data_cached(tickers, start_date_download, end_date_download)
         
-        if df is None:
+        if df_loaded is None:
             st.error("Data download failed. Check tickers and date range.")
             st.stop()
-        elif len(tickers) == 1 and not isinstance(df.columns, pd.MultiIndex):
+        df = df_loaded
+        if len(tickers) == 1 and not isinstance(df.columns, pd.MultiIndex):
             df.columns = [col.capitalize() for col in df.columns]
             
 
@@ -202,23 +209,22 @@ if not df.empty:
         start_date = start_date_download
         end_date = end_date_download
         # Ensure df is sliced to this range (it should be already, but good to be safe)
-        mask = (df.index.date >= start_date) & (df.index.date <= end_date)
-        df = df.loc[mask]
+        if isinstance(df.index, pd.DatetimeIndex):
+            mask = (df.index.date >= start_date) & (df.index.date <= end_date)
+            df = df.loc[mask]
         st.sidebar.info(f"Backtest Range: {start_date} to {end_date}")
     else:
         st.sidebar.subheader("Date Range Filter")
-        min_date = df.index.min().date()
-        max_date = df.index.max().date()
-        
-        start_date = st.sidebar.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
-        end_date = st.sidebar.date_input("End Date", max_date, min_value=start_date, max_value=max_date)
+        if isinstance(df.index, pd.DatetimeIndex):
+            min_date = df.index.min().date()
+            max_date = df.index.max().date()
+            
+            start_date = st.sidebar.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
+            end_date = st.sidebar.date_input("End Date", max_date, min_value=start_date, max_value=max_date)
 
-        if start_date <= end_date:
-            mask = (df.index.date >= start_date) & (df.index.date <= end_date)
-            df = df.loc[mask]
-        else:
-            st.sidebar.error("Error: Start date must be before end date.")
-            st.stop()
+            if start_date <= end_date:
+                mask = (df.index.date >= start_date) & (df.index.date <= end_date)
+                df = df.loc[mask]
 
 # 5. Run Backtest Button
 if st.sidebar.button("Run Backtest"):
@@ -237,7 +243,7 @@ if st.sidebar.button("Run Backtest"):
                 bt_strategy_class = strategy_class
 
             # For pairs trading with downloaded data, we need to ensure the strategy can handle it
-            if "PairsTrading" in selected_strategy_name and len(df.columns.levels) > 1:
+            if "PairsTrading" in selected_strategy_name and isinstance(df.columns, pd.MultiIndex):
                 pass # Already in the right multi-index format
             elif "PairsTrading" in selected_strategy_name:
                 # Check if we have merged data (from multi-select)
@@ -253,16 +259,47 @@ if st.sidebar.button("Run Backtest"):
             )
             
             stats = bt.run()
+            
+            # --- 1. Key Metrics (Top) ---
             st.subheader("Backtest Results")
             
-            # 1. Metrics Table
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Return [%]", f"{stats['Return [%]']:.2f}%")
+            with col2:
+                st.metric("Sharpe Ratio", f"{stats['Sharpe Ratio']:.2f}")
+            with col3:
+                st.metric("Max Drawdown [%]", f"{stats['Max. Drawdown [%]']:.2f}%")
+            with col4:
+                st.metric("Win Rate [%]", f"{stats['Win Rate [%]']:.2f}%")
+
+            # --- 2. Equity Curve (Middle) ---
+            st.subheader("Equity Curve")
+            
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
+                bt.plot(filename=tmp.name, open_browser=False)
+                with open(tmp.name, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                # Reduced height to minimize whitespace, scrolling=False to fit better
+                st.components.v1.html(html_content, height=750, scrolling=False)
+            
+            try:
+                os.remove(tmp.name)
+            except:
+                pass
+
+            # --- 3. Detailed Metrics (Bottom) ---
+            st.subheader("Detailed Metrics")
             # Filter out internal keys (starting with _)
             stats_to_report = stats[~stats.index.str.startswith('_')]
-            st.dataframe(stats_to_report, use_container_width=True)
+            # Convert to DataFrame for better display properties
+            stats_df = pd.DataFrame(stats_to_report).rename(columns={0: "Value"})
+            st.dataframe(stats_df, use_container_width=True, height=400)
             
-            # 2. Trade Log
+            # --- 4. Trade Log (Very Bottom, Collapsed) ---
             trades = stats['_trades']
-            with st.expander("View Trade Log"):
+            with st.expander("View Trade Log", expanded=False):
                 if not trades.empty:
                     # Format trade log for readability
                     trades_formatted = trades.copy()
@@ -273,21 +310,6 @@ if st.sidebar.button("Run Backtest"):
                     st.dataframe(trades_formatted, use_container_width=True)
                 else:
                     st.info("No trades executed.")
-
-            # 3. Plot
-            st.subheader("Equity Curve")
-            
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
-                bt.plot(filename=tmp.name, open_browser=False)
-                with open(tmp.name, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                st.components.v1.html(html_content, height=800, scrolling=True)
-            
-            try:
-                os.remove(tmp.name)
-            except:
-                pass
 
         except Exception as e:
             st.error(f"An error occurred during backtest: {e}")

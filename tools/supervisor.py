@@ -5,6 +5,7 @@ import os
 import signal
 from pathlib import Path
 import logging
+from typing import List
 
 # Add project root to path to import src
 project_root = Path(__file__).parent.parent
@@ -22,7 +23,7 @@ logging.basicConfig(
     ]
 )
 
-def monitor_process(command):
+def monitor_process(command: List[str]) -> None:
     """
     Runs and monitors a subprocess. Sends alerts on crash.
     """

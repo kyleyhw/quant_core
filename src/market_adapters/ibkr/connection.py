@@ -1,9 +1,9 @@
 import asyncio
 import os
 import logging
-from typing import Optional, List
+from typing import Optional, List, Any
 
-from ib_insync import IB
+from ib_insync import IB, AccountValue
 from ib_insync import IB
 from dotenv import load_dotenv
 
@@ -25,7 +25,7 @@ class IBConnection(IConnection):
     def __init__(self,
                  host: Optional[str] = None,
                  port: Optional[int] = None,
-                 client_id: Optional[int] = None):
+                 client_id: Optional[int] = None) -> None:
         """
         Initializes the IBConnection.
         """
@@ -35,13 +35,15 @@ class IBConnection(IConnection):
         self.client_id = client_id or int(os.getenv('IB_CLIENT_ID', 1))
         logging.info(f"Initialized IBConnection with host={self.host}, port={self.port}, client_id={self.client_id}")
 
-    def connect(self) -> None:
+    def connect(self, **kwargs: Any) -> None:
         """
         Establishes a connection to the IB TWS/Gateway.
         `ib_insync` manages the connection and event loop in a background thread.
         """
         try:
             if not self.ib.isConnected():
+                if self.host is None:
+                    raise ConnectionError("IB_HOST is not set")
                 self.ib.connect(self.host, self.port, self.client_id)
                 logging.info("Successfully connected to IB TWS/Gateway.")
             else:
@@ -78,7 +80,7 @@ class IBConnection(IConnection):
         return self.ib.accountSummary()
 
 
-def main():
+def main() -> None:
     """
     Main function to demonstrate IBConnection usage.
     """

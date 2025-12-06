@@ -15,13 +15,13 @@ from unittest.mock import patch, mock_open, MagicMock
 # Mock streamlit before importing utils
 sys.modules['streamlit'] = MagicMock()
 
-from dashboard import utils
+from dashboard import dashboard_utils
 
 class TestDataLoading(unittest.TestCase):
     
-    @patch('dashboard.utils.get_data_files')
+    @patch('dashboard.dashboard_utils.get_data_files')
     @patch('builtins.open', new_callable=mock_open, read_data="Price,Close,Close\nTicker,PEP,KO\n2023-01-01,100,50\n")
-    def test_get_available_assets_pair(self, mock_file, mock_get_files):
+    def test_get_available_assets_pair(self, mock_file: MagicMock, mock_get_files: MagicMock) -> None:
         # Mock finding a pair file
         mock_get_files.return_value = ['/path/to/PEP_KO.csv']
         
@@ -31,7 +31,7 @@ class TestDataLoading(unittest.TestCase):
             mock_df = pd.DataFrame(columns=pd.MultiIndex.from_tuples([('Close', 'PEP'), ('Close', 'KO')], names=['Price', 'Ticker']))
             mock_read_csv.return_value = mock_df
             
-            assets = utils.get_available_assets()
+            assets = dashboard_utils.get_available_assets()
             
             print(f"Assets found: {assets}")
             
@@ -40,13 +40,13 @@ class TestDataLoading(unittest.TestCase):
             self.assertIn('KO', assets)
             self.assertEqual(assets['PEP-KO'], '/path/to/PEP_KO.csv')
 
-    @patch('dashboard.utils.get_data_files')
+    @patch('dashboard.dashboard_utils.get_data_files')
     @patch('builtins.open', new_callable=mock_open, read_data="Date,Close\n2023-01-01,100\n")
-    def test_get_available_assets_single(self, mock_file, mock_get_files):
+    def test_get_available_assets_single(self, mock_file: MagicMock, mock_get_files: MagicMock) -> None:
         # Mock finding a single asset file
         mock_get_files.return_value = ['/path/to/SPY.csv']
         
-        assets = utils.get_available_assets()
+        assets = dashboard_utils.get_available_assets()
         print(f"Assets found: {assets}")
         
         self.assertIn('SPY', assets)

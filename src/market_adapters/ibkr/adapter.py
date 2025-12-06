@@ -1,5 +1,5 @@
 # src/market_adapters/ibkr/adapter.py
-
+from typing import Any
 from src.interfaces import IMarketAdapter
 from .connection import IBConnection
 from .data_loader import IBKRDataLoader
@@ -13,7 +13,7 @@ class IBKRMarketAdapter(IMarketAdapter):
     execution handling components into a single, cohesive unit.
     """
 
-    def __init__(self, **connection_params):
+    def __init__(self, **connection_params: Any) -> None:
         """
         Initializes the adapter and its components.
 

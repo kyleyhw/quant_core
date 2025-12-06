@@ -8,6 +8,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 import time
+from typing import List, Dict, Any, Optional, Tuple, cast
 
 # --- Add project root to path ---
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,9 +61,9 @@ STRATEGY_CONFIG = {
 DEFAULT_DATA = "data/benchmark"
 
 
-def discover_strategies():
+def discover_strategies() -> Tuple[list, list]:
     """Dynamically discovers and imports strategies from the project directories."""
-    strategies = {"standalone": [], "meta": {}}
+    strategies: dict[str, list[Any] | dict[str, Any]] = {"standalone": [], "meta": {}}
     
     # Define search paths for public and private strategies
     public_path = Path(project_root) / 'strategies'
@@ -100,9 +101,9 @@ def discover_strategies():
                         }
                         
                         if is_meta:
-                            strategies["meta"][name] = config
+                            cast(dict, strategies["meta"])[name] = config
                         else:
-                            strategies["standalone"].append(config)
+                            cast(list, strategies["standalone"]).append(config)
                             
                             # Create "Hold" variants for Regime strategies
                             # DISABLED per user request (2025-11-25) to declutter reports
@@ -121,12 +122,12 @@ def discover_strategies():
 
     # Link meta-strategies to their underlying standalone strategies
     linked_meta_strategies = []
-    for meta_name, meta_config in strategies["meta"].items():
+    for meta_name, meta_config in cast(dict, strategies["meta"]).items():
         if meta_name in STRATEGY_CONFIG:
             underlying_name = STRATEGY_CONFIG[meta_name]["underlying"]
             
             # Find the standalone strategy class
-            underlying_class = next((s["class"] for s in strategies["standalone"] if s["name"] == underlying_name), None)
+            underlying_class = next((s["class"] for s in cast(list, strategies["standalone"]) if s["name"] == underlying_name), None)
             
             if underlying_class:
                 linked_config = meta_config.copy()
@@ -139,10 +140,10 @@ def discover_strategies():
             else:
                 print(f"Warning: Underlying strategy '{underlying_name}' not found for meta-strategy '{meta_name}'.")
 
-    return strategies["standalone"], linked_meta_strategies
+    return cast(list, strategies["standalone"]), linked_meta_strategies
 
 
-def run_benchmark(scope: str, data_path: str = None):
+def run_benchmark(scope: str, data_path: Optional[str] = None) -> None:
     """Runs a benchmark for the specified scope of strategies across provided data."""
     
     # Use default data directory if no path provided
@@ -232,7 +233,6 @@ def run_benchmark(scope: str, data_path: str = None):
                             
                         assets_map[asset_name] = {'data': df, 'source': os.path.basename(file_path)}
                         print(f"Loaded {asset_name} from {os.path.basename(file_path)}")
-                    
                 except Exception as e:
                     print(f"Error loading {file_path}: {e}")
                     
@@ -288,7 +288,6 @@ def run_benchmark(scope: str, data_path: str = None):
                      
                      asset_name = Path(data_path).stem.split('_')[0]
                      assets_map[asset_name] = {'data': df, 'source': os.path.basename(data_path)}
-                     
             except Exception as e:
                 print(f"Critical Error loading data {data_path}: {e}")
                 return

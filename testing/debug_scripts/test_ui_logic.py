@@ -8,13 +8,13 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from dashboard import utils
+from dashboard import dashboard_utils
 
-def test_pairs_data_merging():
+def test_pairs_data_merging() -> None:
     print("Testing Pairs Data Merging Logic...")
     
     # Mock assets map
-    assets_map = utils.get_available_assets()
+    assets_map = dashboard_utils.get_available_assets()
     
     # Select two assets
     asset1 = 'PEP'
@@ -25,8 +25,8 @@ def test_pairs_data_merging():
         return
 
     print(f"Loading {asset1} and {asset2}...")
-    df1 = utils.load_asset_data(asset1, assets_map)
-    df2 = utils.load_asset_data(asset2, assets_map)
+    df1 = dashboard_utils.load_asset_data(asset1, assets_map)
+    df2 = dashboard_utils.load_asset_data(asset2, assets_map)
     
     if df1 is None or df2 is None:
         print("Error: Failed to load data.")

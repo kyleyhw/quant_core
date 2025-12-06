@@ -15,7 +15,7 @@ class IBKRExecutionHandler(IExecutionHandler):
     IB-specific Contract and Order objects and submitting them.
     """
 
-    def __init__(self, ib_connection: IBConnection):
+    def __init__(self, ib_connection: IBConnection) -> None:
         if not isinstance(ib_connection, IBConnection):
             raise TypeError("ib_connection must be an instance of IBConnection")
         self.ib_connection = ib_connection
@@ -41,8 +41,8 @@ class IBKRExecutionHandler(IExecutionHandler):
             orderType=order_details.get('order_type', 'MKT'),
             action=order_details.get('action', 'BUY'),
             totalQuantity=order_details.get('quantity', 0),
-            lmtPrice=order_details.get('limit_price'),
-            auxPrice=order_details.get('stop_price')
+            lmtPrice=float(order_details.get('limit_price', 0.0)),
+            auxPrice=float(order_details.get('stop_price', 0.0))
         )
 
     def place_order(self, order_details: Dict[str, Any]) -> Any:

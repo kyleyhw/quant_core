@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from backtesting import Strategy
 from backtesting.lib import TrailingStrategy
 
@@ -23,13 +23,13 @@ class BaseStrategy(TrailingStrategy):
     stop_loss_pct: float = 0.02
     take_profit_pct: float = 0.05
 
-    def __init__(self, broker, data, params):
+    def __init__(self, broker: Any, data: Any, params: dict) -> None:
         super().__init__(broker, data, params)
         self.market_adapter: Optional[IMarketAdapter] = None
         self.entry_price = None
         self.size_factor = 1.0
 
-    def init(self, market_adapter: Optional[IMarketAdapter] = None):
+    def init(self, market_adapter: Optional[IMarketAdapter] = None) -> None:
         """
         Initializes the strategy for either backtesting or live trading.
         """
@@ -39,7 +39,7 @@ class BaseStrategy(TrailingStrategy):
             super().init()
             self.set_trailing_sl(self.stop_loss_pct)
 
-    def next(self):
+    def next(self) -> None:
         """
         Main strategy logic loop. For backtesting only.
         Live trading will be event-driven from a different entry point.
@@ -61,7 +61,7 @@ class BaseStrategy(TrailingStrategy):
             "take_profit_pct": self.take_profit_pct,
         }
 
-    def buy_instrument(self, symbol: str, quantity: float):
+    def buy_instrument(self, symbol: str, quantity: float) -> None:
         """
         Executes a long entry. Delegates to the market adapter if live,
         otherwise uses the backtesting engine.
@@ -80,7 +80,7 @@ class BaseStrategy(TrailingStrategy):
             self.buy(size=size)
             self.entry_price = self.data.Close[-1]
 
-    def sell_instrument(self, symbol: str, quantity: float):
+    def sell_instrument(self, symbol: str, quantity: float) -> None:
         """
         Executes a short entry. Delegates to the market adapter if live,
         otherwise uses the backtesting engine.

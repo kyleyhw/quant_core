@@ -70,7 +70,7 @@ def get_strategy_class(strategy_name: str, all_strategies: dict):
         raise ValueError(f"Unknown strategy: {strategy_name}. Available strategies are: {', '.join(all_strategies.keys())}")
     return all_strategies[strategy_name]
 
-def main():
+def main() -> None:
     """
     Runs a backtest for a single strategy.
     """

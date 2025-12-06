@@ -2,15 +2,16 @@
 import pandas as pd
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
+from typing import Optional, Type
 
 # --- Mock Signal Strategy ---
 class MockSignalStrategy(Strategy):
-    def init(self):
+    def init(self) -> None:
         self.sma1 = self.I(lambda x: pd.Series(x).rolling(10).mean(), self.data.Close)
         self.sma2 = self.I(lambda x: pd.Series(x).rolling(20).mean(), self.data.Close)
 
 
-    def next(self):
+    def next(self) -> Optional[str]:
         print(f"Mock Next: SMA1={self.sma1[-1]}, SMA2={self.sma2[-1]}")
         if crossover(self.sma1, self.sma2):
             print("Mock Signal: BUY")
@@ -21,9 +22,9 @@ class MockSignalStrategy(Strategy):
         return None
 
 # --- Signal Executor Logic (Dynamic Subclassing Approach) ---
-def create_executable_strategy(base_strategy_class):
+def create_executable_strategy(base_strategy_class: Type[Strategy]) -> Type[Strategy]:
     class ExecutableStrategy(base_strategy_class):
-        def next(self):
+        def next(self) -> None:
             # Call the underlying strategy's next method
             signal = super().next()
             
@@ -47,7 +48,7 @@ def create_executable_strategy(base_strategy_class):
     return ExecutableStrategy
 
 # --- Test Setup ---
-def run_test():
+def run_test() -> None:
     # Create dummy data
     dates = pd.date_range(start='2023-01-01', periods=100)
     data = pd.DataFrame({

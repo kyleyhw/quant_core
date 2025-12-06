@@ -1,6 +1,8 @@
 from backtesting import Backtest
 from backtesting.backtesting import _Broker
 from functools import partial
+from typing import Any
+import pandas as pd
 
 import inspect
 
@@ -8,7 +10,7 @@ class CustomBroker(_Broker):
     """
     A custom Broker implementation that supports callable commission models.
     """
-    def __init__(self, spread=0, **kwargs):
+    def __init__(self, spread: int = 0, **kwargs: Any) -> None:
         # Extract the real commission (which might be a callable)
         commission = kwargs.pop('commission', 0.0)
         
@@ -24,7 +26,7 @@ class CustomBroker(_Broker):
         # Set the real commission on the instance
         self._commission = commission
 
-    def _adjusted_price(self, size=None, price=None):
+    def _adjusted_price(self, size: float | None = None, price: float | None = None) -> float:
         """
         Adjusts the price to account for commission.
         Supports both float (percentage) and callable (dynamic) commission models.
@@ -55,7 +57,7 @@ class CustomBacktest(Backtest):
     """
     A custom Backtest class that uses CustomBroker to support callable commissions.
     """
-    def __init__(self, data, strategy, **kwargs):
+    def __init__(self, data: pd.DataFrame, strategy: Any, **kwargs: Any) -> None:
         # Extract commission to prevent validation error in super().__init__
         commission = kwargs.pop('commission', 0.0)
         

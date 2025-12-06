@@ -10,13 +10,13 @@ from src.backtesting_extensions import CustomBacktest
 from backtesting import Strategy
 
 # Mock commission
-def ibkr_tiered_commission(quantity, price):
+def ibkr_tiered_commission(quantity: float, price: float) -> float:
     return 1.0
 
 class DummyStrategy(Strategy):
-    def init(self):
+    def init(self) -> None:
         pass
-    def next(self):
+    def next(self) -> None:
         if not self.position:
             self.buy()
         elif len(self.data) == len(self.data.df) - 1:

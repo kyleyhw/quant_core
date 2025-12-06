@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Any
 
 import pandas as pd
 from ib_insync import Contract, BarData
@@ -19,7 +19,7 @@ class IBKRDataLoader(IDataLoader):
     IBConnection.
     """
 
-    def __init__(self, ib_connection: IBConnection):
+    def __init__(self, ib_connection: IBConnection) -> None:
         """
         Initializes the DataLoader with an IBConnection instance.
 
@@ -57,7 +57,8 @@ class IBKRDataLoader(IDataLoader):
                               end: str,
                               sec_type: str = 'STK',
                               exchange: str = 'ARCA',
-                              currency: str = 'USD'
+                              currency: str = 'USD',
+                              **kwargs: Any
                               ) -> pd.DataFrame:
         """
         Fetches historical market data for a given symbol.
@@ -106,7 +107,7 @@ class IBKRDataLoader(IDataLoader):
             return pd.DataFrame()
 
 
-def main():
+def main() -> None:
     """
     Main function to demonstrate DataLoader usage.
     """

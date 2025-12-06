@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any
 
 from strategies.base_strategy import BaseStrategy
 
@@ -20,10 +21,10 @@ class BollingerBandsStrategy(BaseStrategy):
     bb_period = 20        # Period for the Moving Average and Standard Deviation
     bb_std_dev = 2.0      # Number of standard deviations for the bands
 
-    def init(self):
-        super().init()
+    def init(self, **kwargs: Any) -> None:
+        super().init(**kwargs)
 
-    def next(self):
+    def next(self) -> None:
         # Ensure we have enough data for Bollinger Bands calculation
         if len(self.data.Close) < self.bb_period:
             return

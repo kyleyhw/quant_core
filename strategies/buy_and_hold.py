@@ -9,10 +9,10 @@ class BuyAndHoldStrategy(Strategy):
     Used as a baseline for benchmarking.
     """
     
-    def init(self):
+    def init(self) -> None:
         pass
 
-    def next(self):
+    def next(self) -> None:
         # If we don't have a position, buy full size
         if not self.position:
             self.buy()

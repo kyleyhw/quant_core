@@ -16,7 +16,7 @@ class ExecutionManager:
     MAX_DOLLAR_VALUE_PER_ORDER = 5000.0
     MAX_PRICE_DEVIATION_PERCENT = 0.05  # 5% deviation from current price
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def check_order_limits(self, order_details: Dict[str, Any], current_price: float) -> bool:

@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional, Any
 
 from strategies.base_strategy import BaseStrategy
 
@@ -21,10 +22,10 @@ class RSI2PeriodStrategy(BaseStrategy):
     oversold_threshold = 10
     overbought_threshold = 90
 
-    def init(self):
-        super().init()
+    def init(self, **kwargs: Any) -> None:
+        super().init(**kwargs)
 
-    def next(self):
+    def next(self) -> None:
         # Ensure we have enough data for RSI calculation
         # RSI(2) needs at least 2 periods for initial calculation, plus one more for previous value
         if len(self.data.Close) <= self.rsi_period:
@@ -72,13 +73,14 @@ class RSI2PeriodStrategy(BaseStrategy):
 
         # --- Entry Signal (Buy when RSI crosses below oversold) ---
         if cross_below_oversold:
-            return "buy"
+            if not self.position:
+                self.buy()
         
         # --- Exit Signal (Sell when RSI crosses above overbought) ---
         elif cross_above_overbought:
-            return "sell"
+            if self.position:
+                self.position.close()
 
-        return None
 
     def get_params(self) -> dict:
         """

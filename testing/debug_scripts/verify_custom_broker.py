@@ -3,21 +3,22 @@ from backtesting.backtesting import _Broker
 import pandas as pd
 import numpy as np
 from math import copysign
+from typing import Any, Optional, Type
 
 # Mock the tiered commission function
-def ibkr_tiered_commission(quantity, price):
+def ibkr_tiered_commission(quantity: float, price: float) -> float:
     # Simple mock: $1 per trade
     return 1.0
 
 class CustomBroker(_Broker):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         commission = kwargs.pop('commission', 0.0)
         # Pass 0.0 to super to bypass validation
         super().__init__(commission=0.0, **kwargs)
         # Set the real commission
         self._commission = commission
 
-    def _adjusted_price(self, size=None, price=None):
+    def _adjusted_price(self, size: Optional[float] = None, price: Optional[float] = None) -> float:
         price = price or self.last_price
         commission = self._commission
         
@@ -31,7 +32,7 @@ class CustomBroker(_Broker):
         return super()._adjusted_price(size, price)
 
 class CustomBacktest(Backtest):
-    def __init__(self, data, strategy, **kwargs):
+    def __init__(self, data: pd.DataFrame, strategy: Type[Strategy], **kwargs: Any) -> None:
         # Bypass validation by passing 0.0 commission initially
         commission = kwargs.pop('commission', 0.0)
         super().__init__(data, strategy, commission=0.0, **kwargs)
@@ -49,9 +50,9 @@ class CustomBacktest(Backtest):
         )
 
 class DummyStrategy(Strategy):
-    def init(self):
+    def init(self) -> None:
         pass
-    def next(self):
+    def next(self) -> None:
         if not self.position:
             self.buy()
         elif len(self.data) == len(self.data.df) - 1:
