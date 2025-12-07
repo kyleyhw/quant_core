@@ -25,6 +25,7 @@ The framework leverages the following key technologies:
 *   **Backtesting:** `backtesting.py`
 *   **Machine Learning:** `xgboost`, `scikit-learn`
 *   **Operations:** `python-dotenv`, `requests`
+*   **Data Management:** Smart Caching (Ephemeral & Permanent file storage)
 
 ## Project Plan
 
