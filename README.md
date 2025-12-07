@@ -1,6 +1,6 @@
 # Algorithmic Trading Framework (Open-Core)
 
-An open-core, market-agnostic algorithmic trading framework designed for Python. It provides a robust, extensible foundation for developing and implementing strategies, from traditional technical analysis to advanced Machine Learning models, with a consistent emphasis on risk management.
+This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private. Its initial concrete implementation is for Interactive Brokers (IBKR).
 
 ## Purpose
 
@@ -25,7 +25,6 @@ The framework leverages the following key technologies:
 *   **Backtesting:** `backtesting.py`
 *   **Machine Learning:** `xgboost`, `scikit-learn`
 *   **Operations:** `python-dotenv`, `requests`
-*   **Package Management:** `uv` (https://github.com/astral-sh/uv)
 
 ## Project Plan
 
@@ -67,7 +66,8 @@ To understand the framework's performance, begin by examining the comprehensive 
 quant_core/
 ├── .env                  # Local environment variables (IGNORED BY GIT)
 ├── README.md             # This file: Project overview and high-level documentation
-├── pyproject.toml        # Project dependencies managed by UV
+├── requirements.txt      # Project dependencies
+├── setup.py              # Makes the core framework installable
 ├── run_backtesting/
 │   └── benchmark.py      # Script for multi-strategy comparison
 ├── data/                 # Historical CSV data (Ignored by Git)
@@ -97,20 +97,16 @@ quant_core/
     git clone --recurse-submodules [repository-url]
     cd quant_core
     ```
-2.  **Install `uv` (if not already installed):**
+2.  **Install dependencies:**
+    Install the core framework in editable mode with IBKR support.
     ```bash
-    pip install uv
+    pip install -e .[ibkr]
     ```
-3.  **Create a virtual environment and install dependencies:**
-    ```bash
-    uv venv
-    uv pip install -e .[ibkr]
-    ```
-4.  **Set up environment variables:**
+3.  **Set up environment variables:**
     Create a `.env` file in the root directory for sensitive information (e.g., IBKR connection details).
-5.  **Connect to IBKR TWS/Gateway:**
+4.  **Connect to IBKR TWS/Gateway:**
     Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
-6.  **Launch the Dashboard (UI):**
+5.  **Launch the Dashboard (UI):**
     The project includes a Streamlit-based dashboard for easy backtesting and analysis.
     ```bash
     python -m streamlit run dashboard/app.py
@@ -123,7 +119,7 @@ quant_core/
     - **View Results**: Analyze the interactive plots, metrics, and trade logs.
     - **Private Mode**: Enable this checkbox to load proprietary strategies from the `strategies_private` submodule.
     - **Download Data**: Enable this checkbox to force a fresh download of historical data from Yahoo Finance, overriding any locally cached files.
-7.  **Run Command-Line Backtests:**
+6.  **Run Command-Line Backtests:**
     Alternatively, use the benchmark script to evaluate strategy performance via CLI.
     ```bash
     python run_backtesting/benchmark.py
