@@ -1,7 +1,7 @@
 [project]
 name = "quant-core"
 version = "0.1.0"
-description = "Add your description here"
+description = "Algorithmic Trading Framework"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -32,6 +32,25 @@ package = true
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.0",
+    "ruff>=0.14.8",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "run_backtesting*", "strategies_private*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
