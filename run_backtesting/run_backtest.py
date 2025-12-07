@@ -117,48 +117,79 @@ def main(argv: list[str] | None = None) -> None:
         choices=list(COMMISSION_MODELS.keys()),
         help='Commission model to use.'
     )
+    parser.add_argument(
+        '--start',
+        type=str,
+        default='2020-01-01',
+        help='Start date for fetching ticker data (YYYY-MM-DD).'
+    )
+    parser.add_argument(
+        '--end',
+        type=str,
+        default='2023-12-31',
+        help='End date for fetching ticker data (YYYY-MM-DD).'
+    )
     args = parser.parse_args(argv)
 
     # --- 1. Load Data ---
-    print(f"Loading data from {args.data}...")
+    from src.data_loader import SmartLoader
     
     loaded_dfs = []
-    # Ensure args.data is a list (it should be with nargs='+')
-    data_paths = args.data if isinstance(args.data, list) else [args.data]
     
-    for file_path in data_paths:
-        if not os.path.exists(file_path):
-            print(f"Error: Data file not found at {file_path}")
-            return
-
-        # Load the data without parsing dates initially
-        df = pd.read_csv(file_path)
-        df.rename(columns={'date': 'Date'}, inplace=True)
-
-        # Identify the date column (case-insensitive) and convert to datetime
-        date_col_candidates = [col for col in df.columns if col.lower() == 'date']
-        if not date_col_candidates:
-            print(f"Error: No date column found in {file_path}. Expected 'Date' or 'date'.")
-            return
-        date_col = date_col_candidates[0]
-
-        df[date_col] = pd.to_datetime(df[date_col], utc=True)
-        df.set_index(date_col, inplace=True)
-        df.index.name = 'Date'
-
-        # Ensure timezone-naive
-        if isinstance(df.index, pd.DatetimeIndex) and df.index.tz is not None:
-            df.index = df.index.tz_localize(None)
-
-        # Standardize column names
-        df.columns = [col.capitalize() for col in df.columns]
+    with SmartLoader() as loader:
+        data_inputs = args.data if isinstance(args.data, list) else [args.data]
         
-        # Explicitly convert to numeric
-        for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-        
-        loaded_dfs.append(df)
+        for input_val in data_inputs:
+            df = None
+            
+            # Case A: Local CSV File
+            if input_val.endswith('.csv') and os.path.exists(input_val):
+                print(f"Loading local file: {input_val}")
+                df = pd.read_csv(input_val)
+                df.rename(columns={'date': 'Date'}, inplace=True)
+
+                # Identify date column
+                date_col_candidates = [col for col in df.columns if col.lower() == 'date']
+                if not date_col_candidates:
+                    print(f"Error: No date column found in {input_val}.")
+                    return
+                date_col = date_col_candidates[0]
+
+                df[date_col] = pd.to_datetime(df[date_col], utc=True)
+                df.set_index(date_col, inplace=True)
+                df.index.name = 'Date'
+
+            # Case B: Ticker Symbol (via SmartLoader)
+            else:
+                print(f"Requesting data for ticker: {input_val} ({args.start} to {args.end})")
+                try:
+                    df = loader.load_data(input_val, args.start, args.end)
+                    # SmartLoader returns index as Date, but might be timezone aware or not.
+                    # Ensure consistency.
+                    df.index.name = 'Date'
+                except Exception as e:
+                    print(f"Error loading {input_val}: {e}")
+                    return
+
+            # Common Post-Processing
+            if df is not None:
+                # Ensure timezone-naive
+                if isinstance(df.index, pd.DatetimeIndex) and df.index.tz is not None:
+                    df.index = df.index.tz_localize(None)
+
+                # Standardize column names
+                df.columns = [col.capitalize() for col in df.columns]
+                
+                # Explicitly convert to numeric
+                for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                loaded_dfs.append(df)
+
+    if not loaded_dfs:
+        print("Error: No data loaded.")
+        return
 
     if not loaded_dfs:
         print("Error: No data loaded.")
