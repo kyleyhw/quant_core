@@ -32,6 +32,8 @@ def handle_download(args):
         '--end', args.end,
         '--output', args.output,
     ]
+    if args.force:
+        argv.append('--force')
     data_downloader.main(argv)
 
 def handle_train_regime(args):
@@ -83,6 +85,7 @@ def main():
     parser_download.add_argument("--start", required=True, help="The start date for the data in YYYY-MM-DD format.")
     parser_download.add_argument("--end", required=True, help="The end date for the data in YYYY-MM-DD format.")
     parser_download.add_argument("--output", default="data", help="The directory to save the downloaded data.")
+    parser_download.add_argument("--force", action="store_true", help="Force download even if local file exists.")
     parser_download.set_defaults(func=handle_download)
 
     # --- Train Regime Command ---
