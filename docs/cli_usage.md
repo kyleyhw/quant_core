@@ -16,15 +16,6 @@ Once synced, you can access all commands via the `qc` shortcut using `uv run`:
 uv run qc --help
 ```
 
-## Data Management & Caching
-
-The CLI utilizes a **"Smart Data"** system to optimize backtesting performance and disk usage.
-
-*   **Caching Storage**: Data is cached as CSV files in the `data/` directory (storage), not in RAM.
-*   **Ephemeral Caching**: By default, data downloaded for backtests (e.g., `uv run qc backtest --data NVDA`) is **temporary**. It is downloaded, used for the simulation, and automatically deleted upon completion to keep your workspace clean.
-*   **Permanent Tickers**: A default list of tickers (`SPY`, `QQQ`, `IWM`, `GLD`, `TLT`) are considered "permanent". Their data is preserved in the `data/` directory to avoid re-downloading these common assets.
-*   **Force Download**: Use the `download` command with the `--force` flag to explicitly refresh data even if it exists locally.
-
 ## Commands
 
 ### `backtest`
