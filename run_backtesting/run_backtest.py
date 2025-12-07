@@ -70,7 +70,7 @@ def get_strategy_class(strategy_name: str, all_strategies: dict):
         raise ValueError(f"Unknown strategy: {strategy_name}. Available strategies are: {', '.join(all_strategies.keys())}")
     return all_strategies[strategy_name]
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """
     Runs a backtest for a single strategy.
     """
@@ -117,7 +117,7 @@ def main() -> None:
         choices=list(COMMISSION_MODELS.keys()),
         help='Commission model to use.'
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # --- 1. Load Data ---
     print(f"Loading data from {args.data}...")

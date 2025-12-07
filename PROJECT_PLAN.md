@@ -9,9 +9,10 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 4.  [completed] Implement standardized data fetching in `src/data_loader.py`.
 5.  [completed] Create the base `Notifier` class in `src/notifications.py`.
 6.  [completed] Set up initial documentation, including `README.md` and the `/docs` folder structure.
+7.  [completed] Migrate dependency management to `uv` (`pyproject.toml`, `uv.lock`).
 
 ## Phase 2: Base Strategy & Backtesting Framework
-7.  [completed] Develop the parent `base_strategy.py` to handle position sizing and stop-loss logic.
+8.  [completed] Develop the parent `base_strategy.py` to handle position sizing and stop-loss logic.
 8.  [completed] Create a public `simple_ma_crossover.py` strategy (e.g., a moving average crossover) inheriting from the base strategy.
 9.  [completed] Implement the backtesting script `run_backtesting/run_backtest.py` to test a single strategy.
 10. [completed] Generate the first backtest report and save it to the `strategies/reports/` directory.
