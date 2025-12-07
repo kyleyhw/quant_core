@@ -60,8 +60,19 @@ def download_data(tickers: List[str], start_date: str, end_date: str, output_dir
             except KeyError:
                 # Fallback implementation if level 1 is not ticker (depends on yfinance version/structure)
                 # Ensure we are robust to structure
-                 ticker_data = data.loc[:, (slice(None), ticker)]
-                 
+                 try:
+                    ticker_data = data.loc[:, (slice(None), ticker)]
+                    # If we still have MultiIndex columns (e.g. Price, Ticker), drop the Ticker level
+                    if isinstance(ticker_data.columns, pd.MultiIndex):
+                        ticker_data.columns = ticker_data.columns.droplevel(1)
+                 except KeyError:
+                    # Last resort fallback, maybe columns are flat already?
+                    ticker_data = data
+
+            # Ensure columns are flat (drop 'Price' level if exists or generic MultiIndex)
+            if isinstance(ticker_data.columns, pd.MultiIndex):
+                ticker_data.columns = ticker_data.columns.get_level_values(0)
+            
             ticker_data.to_csv(output_path)
             print(f"Data for {ticker} saved to {output_path}")
             created_files.append(output_path)
