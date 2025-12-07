@@ -4,16 +4,16 @@ The `quant-core` CLI provides a set of commands to interact with the framework, 
 
 ## Getting Started
 
-To use the CLI, you must first install the project in editable mode. This will register the `quant-core` command in your environment.
+To use the CLI, ensure you have synced the project dependencies using `uv`.
 
 ```bash
-uv pip install -e .
+uv sync
 ```
 
-Once installed, you can access all commands by calling `quant-core` from your terminal.
+Once synced, you can access all commands via the `qc` shortcut using `uv run`:
 
 ```bash
-quant-core --help
+uv run qc --help
 ```
 
 ## Commands
@@ -25,7 +25,7 @@ Run a backtest for a single strategy.
 **Usage:**
 
 ```bash
-quant-core backtest --strategy <STRATEGY_NAME> --data <DATA_PATH> [OPTIONS]
+uv run qc backtest --strategy <STRATEGY_NAME> --data <DATA_PATH> [OPTIONS]
 ```
 
 **Arguments:**
@@ -38,7 +38,7 @@ quant-core backtest --strategy <STRATEGY_NAME> --data <DATA_PATH> [OPTIONS]
 **Example:**
 
 ```bash
-quant-core backtest --strategy SimpleMACrossover --data data/benchmark/SPY_2024-10-01_2025-11-25.csv
+uv run qc backtest --strategy SimpleMACrossover --data data/benchmark/SPY_2024-10-01_2025-11-25.csv
 ```
 
 ### `benchmark`
@@ -48,7 +48,7 @@ Run a benchmark of multiple strategies.
 **Usage:**
 
 ```bash
-quant-core benchmark [OPTIONS]
+uv run qc benchmark [OPTIONS]
 ```
 
 **Arguments:**
@@ -59,7 +59,7 @@ quant-core benchmark [OPTIONS]
 **Example:**
 
 ```bash
-quant-core benchmark --scope public --data data/benchmark
+uv run qc benchmark --scope public --data data/benchmark
 ```
 
 ### `download`
@@ -69,7 +69,7 @@ Download historical market data from Yahoo Finance.
 **Usage:**
 
 ```bash
-quant-core download --tickers <TICKERS> --start <START_DATE> --end <END_DATE> [OPTIONS]
+uv run qc download --tickers <TICKERS> --start <START_DATE> --end <END_DATE> [OPTIONS]
 ```
 
 **Arguments:**
@@ -82,7 +82,7 @@ quant-core download --tickers <TICKERS> --start <START_DATE> --end <END_DATE> [O
 **Example:**
 
 ```bash
-quant-core download --tickers SPY AAPL --start 2024-01-01 --end 2025-01-01
+uv run qc download --tickers SPY AAPL --start 2024-01-01 --end 2025-01-01
 ```
 
 ### `train-regime`
@@ -92,7 +92,7 @@ Train the XGBoost regime classifier.
 **Usage:**
 
 ```bash
-quant-core train-regime [OPTIONS]
+uv run qc train-regime [OPTIONS]
 ```
 
 **Arguments:**
@@ -107,7 +107,7 @@ quant-core train-regime [OPTIONS]
 **Example:**
 
 ```bash
-quant-core train-regime --csv data/SPY_daily.csv
+uv run qc train-regime --csv data/SPY_daily.csv
 ```
 
 ### `train-ensemble`
@@ -117,11 +117,11 @@ Train the ensemble models.
 **Usage:**
 
 ```bash
-quant-core train-ensemble
+uv run qc train-ensemble
 ```
 
 **Example:**
 
 ```bash
-quant-core train-ensemble
+uv run qc train-ensemble
 ```
