@@ -4,15 +4,17 @@ import argparse
 import os
 from typing import List
 
-def download_data(tickers: List[str], start_date: str, end_date: str, output_dir: str, force_download: bool = False):
+def download_data(tickers: List[str], start_date: str, end_date: str, output_dir: str, force_download: bool = False) -> List[str]:
     """
     Downloads historical market data from Yahoo Finance and saves it to a CSV file.
     Checks for existing files to avoid redundant downloads unless force_download is True.
+    Returns a list of paths to the data files (including those found in cache if force_download=False).
     """
     # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
     tickers_to_download = []
+    cached_files = []
     
     # Check cache for each ticker
     if not force_download:
@@ -20,6 +22,7 @@ def download_data(tickers: List[str], start_date: str, end_date: str, output_dir
             expected_path = os.path.join(output_dir, f"{ticker}_{start_date}_{end_date}.csv")
             if os.path.exists(expected_path):
                 print(f"Cache hit for {ticker}: {expected_path}")
+                cached_files.append(expected_path)
             else:
                 tickers_to_download.append(ticker)
     else:
@@ -27,7 +30,7 @@ def download_data(tickers: List[str], start_date: str, end_date: str, output_dir
         
     if not tickers_to_download:
         print("All requested data found in cache.")
-        return
+        return cached_files
 
     print(f"Downloading data for {tickers_to_download} from {start_date} to {end_date}...")
     try:
@@ -41,11 +44,13 @@ def download_data(tickers: List[str], start_date: str, end_date: str, output_dir
         return
 
     # Save each ticker to a separate CSV file
+    created_files = []
     if len(tickers_to_download) == 1:
         ticker = tickers_to_download[0]
         output_path = os.path.join(output_dir, f"{ticker}_{start_date}_{end_date}.csv")
         data.to_csv(output_path)
         print(f"Data saved to {output_path}")
+        created_files.append(output_path)
     else:
         for ticker in tickers_to_download:
             output_path = os.path.join(output_dir, f"{ticker}_{start_date}_{end_date}.csv")
@@ -59,6 +64,9 @@ def download_data(tickers: List[str], start_date: str, end_date: str, output_dir
                  
             ticker_data.to_csv(output_path)
             print(f"Data for {ticker} saved to {output_path}")
+            created_files.append(output_path)
+            
+    return cached_files + created_files
 
 def main(argv: list[str] | None = None):
     """Main entry point for the data downloader script."""

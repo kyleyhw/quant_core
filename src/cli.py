@@ -14,6 +14,8 @@ def handle_backtest(args):
         '--data', args.data,
         '--cash', str(args.cash),
         '--commission', args.commission,
+        '--start', args.start,
+        '--end', args.end,
     ]
     
     run_backtest.main(argv)
@@ -71,6 +73,8 @@ def main():
     parser_backtest.add_argument("--data", required=True, help="Path to the historical data CSV file.")
     parser_backtest.add_argument("--cash", type=int, default=10000, help="Initial cash for the backtest.")
     parser_backtest.add_argument("--commission", default="0.002", help="Commission to use for the backtest.")
+    parser_backtest.add_argument("--start", type=str, default="2020-01-01", help="Start date for ticker data (YYYY-MM-DD).")
+    parser_backtest.add_argument("--end", type=str, default="2023-12-31", help="End date for ticker data (YYYY-MM-DD).")
     parser_backtest.set_defaults(func=handle_backtest)
 
     # --- Benchmark Command ---
