@@ -173,8 +173,16 @@ def main(argv: list[str] | None = None) -> None:
 
             # Common Post-Processing
             if df is not None:
+                # Explicitly ensure index is DatetimeIndex
+                if not isinstance(df.index, pd.DatetimeIndex):
+                    try:
+                        df.index = pd.to_datetime(df.index, utc=True)
+                    except Exception as e:
+                        print(f"Error converting index to datetime: {e}")
+                        return
+
                 # Ensure timezone-naive
-                if isinstance(df.index, pd.DatetimeIndex) and df.index.tz is not None:
+                if df.index.tz is not None:
                     df.index = df.index.tz_localize(None)
 
                 # Standardize column names
