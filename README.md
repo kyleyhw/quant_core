@@ -54,6 +54,9 @@ This documentation provides a detailed overview of the framework and its IBKR im
 5.  **[Interpreting Reports](./docs/interpreting_report.md)**
     -   Provides detailed explanations of the various performance metrics found in backtest reports.
 
+6.  **[Data Management](./docs/data_management.md)**
+    -   Explains the Smart Data system, including ephemeral vs. permanent caching storage strategies.
+
 ## Sample Backtest Reports
 
 To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
