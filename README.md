@@ -154,4 +154,13 @@ The framework is designed to be extended. New markets can be added by creating a
 - **Type Hinting:** All functions must have Python type hints.
 - **Documentation:** Docstrings should focus on **"Why"** a component exists, not just "What" it does.
 - **Backtesting:** Use the `ibkr_tiered_commission` function to simulate realistic IBKR Pro Tiered pricing.
-- **Benchmarking:** Use the **Sharpe Ratio** as the primary metric for comparing strategies, not total return.
+- **Benchmarks:** Use the **Sharpe Ratio** as the primary metric for comparing strategies, not total return.
+
+## Code Quality Workflow
+
+We enforce strict code quality using `ruff` (linting/formatting) and `ty` (type checking).
+
+1.  **Install Hooks:** `uv run pre-commit install`
+2.  **Manual Check:** `uv run ruff check --fix .` and `uvx ty check`
+
+For detailed instructions, see **[Code Quality Documentation](./docs/code_quality.md)**.
