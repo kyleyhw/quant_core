@@ -1,9 +1,12 @@
 # src/market_adapters/ibkr/adapter.py
 from typing import Any
+
 from src.interfaces import IMarketAdapter
+
 from .connection import IBConnection
 from .data_loader import IBKRDataLoader
 from .execution import IBKRExecutionHandler
+
 
 class IBKRMarketAdapter(IMarketAdapter):
     """
@@ -24,4 +27,3 @@ class IBKRMarketAdapter(IMarketAdapter):
         self.connection = IBConnection(**connection_params)
         self.data_loader = IBKRDataLoader(self.connection)
         self.execution_handler = IBKRExecutionHandler(self.connection)
-
