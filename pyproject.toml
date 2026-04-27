@@ -16,6 +16,7 @@ dependencies = [
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
     "statsmodels>=0.14.6",
+    "streamlit>=1.40.0",
     "ta-lib>=0.6.8",
     "tabulate>=0.9.0",
     "xgboost>=3.1.2",
@@ -34,8 +35,10 @@ build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
+    "detect-secrets>=1.5.0",
     "pre-commit>=4.5.0",
     "ruff>=0.14.8",
+    "ty>=0.0.32",
 ]
 
 [tool.setuptools.packages.find]
@@ -49,6 +52,25 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
 ignore = []
+
+# E402 (module-level import not at top of file) is intentional in scripts that
+# bootstrap sys.path before importing first-party packages. Suppress per-file
+# rather than globally so the rule still catches accidental misordered imports
+# in library code.
+[tool.ruff.lint.per-file-ignores]
+"dashboard/app.py" = ["E402"]
+"dashboard/dashboard_utils.py" = ["E402"]
+"dashboard/test_dashboard_utils.py" = ["E402"]
+"run_backtesting/benchmark.py" = ["E402"]
+"run_backtesting/run_backtest.py" = ["E402"]
+"src/market_adapters/ibkr/connection.py" = ["E402"]
+"strategies_private/ensemble_signal_strategy.py" = ["E402"]
+"strategies_private/portfolio_allocation_strategy.py" = ["E402"]
+"strategies_private/research/generate_trade_dataset.py" = ["E402"]
+"testing/debug_scripts/test_data_loading.py" = ["E402"]
+"testing/debug_scripts/test_ui_logic.py" = ["E402"]
+"testing/test_execution_safety.py" = ["E402"]
+"tools/supervisor.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

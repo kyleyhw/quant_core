@@ -1,44 +1,51 @@
-import os
-import requests
 import logging
+import os
 from enum import Enum
-from typing import Optional
 
+import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 class Severity(Enum):
     """Notification severity levels."""
-    INFO = ('INFO', '#3498db')  # Blue
-    WARNING = ('WARNING', '#f1c40f')  # Yellow
-    ERROR = ('ERROR', '#e74c3c')  # Red
-    CRITICAL = ('CRITICAL', '#992d22') # Dark Red
+
+    INFO = ("INFO", "#3498db")  # Blue
+    WARNING = ("WARNING", "#f1c40f")  # Yellow
+    ERROR = ("ERROR", "#e74c3c")  # Red
+    CRITICAL = ("CRITICAL", "#992d22")  # Dark Red
+
 
 class Notifier:
     """
     Handles sending notifications to a Discord webhook.
     """
 
-    def __init__(self, webhook_url: Optional[str] = None):
+    def __init__(self, webhook_url: str | None = None):
         """
         Initializes the Notifier.
 
         Args:
-            webhook_url (Optional[str]): The Discord webhook URL. 
-                                         If not provided, it's read from the DISCORD_WEBHOOK_URL environment variable.
+            webhook_url (Optional[str]): The Discord webhook URL.
+                If not provided, it's read from the DISCORD_WEBHOOK_URL
+                environment variable.
         """
-        self.webhook_url = webhook_url or os.getenv('DISCORD_WEBHOOK_URL')
+        self.webhook_url = webhook_url or os.getenv("DISCORD_WEBHOOK_URL")
         if not self.webhook_url:
-            logging.warning("DISCORD_WEBHOOK_URL environment variable not set. Notifier will be disabled.")
+            logging.warning(
+                "DISCORD_WEBHOOK_URL environment variable not set. Notifier will be disabled."
+            )
         else:
             logging.info("Notifier initialized with a Discord webhook URL.")
 
-    def send(self, message: str, severity: Severity = Severity.INFO, title: str = "Trading Bot Alert") -> bool:
+    def send(
+        self, message: str, severity: Severity = Severity.INFO, title: str = "Trading Bot Alert"
+    ) -> bool:
         """
         Sends a formatted message to the configured Discord webhook.
 
@@ -55,7 +62,7 @@ class Notifier:
             return False
 
         level_name, color = severity.value
-        hex_color = int(color.replace('#', ''), 16)
+        hex_color = int(color.replace("#", ""), 16)
 
         # Structure the payload for Discord's embed format
         payload = {
@@ -64,13 +71,7 @@ class Notifier:
                     "title": title,
                     "description": message,
                     "color": hex_color,
-                    "fields": [
-                        {
-                            "name": "Severity",
-                            "value": level_name,
-                            "inline": True
-                        }
-                    ]
+                    "fields": [{"name": "Severity", "value": level_name, "inline": True}],
                 }
             ]
         }
@@ -84,13 +85,14 @@ class Notifier:
             logging.error(f"Failed to send notification: {e}")
             return False
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # This is an example of how to use the Notifier.
     # To test this, you MUST have a .env file in the project root with your Discord webhook URL:
     # DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your/url"
 
     print("Running Notifier demonstration...")
-    
+
     # Initialize notifier (it will automatically load from .env)
     notifier = Notifier()
 
@@ -99,12 +101,12 @@ if __name__ == '__main__':
         print("Please set it to test notifications.")
     else:
         print("\nSending test notifications...")
-        
+
         # Send an info message
         success_info = notifier.send(
             "This is a test 'INFO' message from the trading bot.",
             severity=Severity.INFO,
-            title="System Status Update"
+            title="System Status Update",
         )
         print(f"INFO message sent: {success_info}")
 
@@ -112,7 +114,7 @@ if __name__ == '__main__':
         success_warning = notifier.send(
             "This is a test 'WARNING' message. Something might need attention.",
             severity=Severity.WARNING,
-            title="Potential Issue Detected"
+            title="Potential Issue Detected",
         )
         print(f"WARNING message sent: {success_warning}")
 
@@ -120,15 +122,16 @@ if __name__ == '__main__':
         success_error = notifier.send(
             "This is a test 'ERROR' message. An operation failed.",
             severity=Severity.ERROR,
-            title="Operation Failed"
+            title="Operation Failed",
         )
         print(f"ERROR message sent: {success_error}")
 
         # Send a critical message
         success_critical = notifier.send(
-            "This is a test 'CRITICAL' message. A major component has failed and requires immediate action.",
+            "This is a test 'CRITICAL' message. A major component has failed "
+            "and requires immediate action.",
             severity=Severity.CRITICAL,
-            title="!!! CRITICAL FAILURE !!!"
+            title="!!! CRITICAL FAILURE !!!",
         )
         print(f"CRITICAL message sent: {success_critical}")
 

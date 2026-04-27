@@ -1,7 +1,8 @@
 import numpy as np
-from typing import Optional, Any
 
+from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
+
 
 class RSI2PeriodStrategy(BaseStrategy):
     """
@@ -22,8 +23,8 @@ class RSI2PeriodStrategy(BaseStrategy):
     oversold_threshold = 10
     overbought_threshold = 90
 
-    def init(self, **kwargs: Any) -> None:
-        super().init(**kwargs)
+    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
+        super().init(market_adapter=market_adapter)
 
     def next(self) -> None:
         # Ensure we have enough data for RSI calculation
@@ -33,8 +34,8 @@ class RSI2PeriodStrategy(BaseStrategy):
 
         # Manual RSI calculation (simplified for 2-period)
         # Price changes
-        delta = self.data.Close[-self.rsi_period:] - self.data.Close[-(self.rsi_period + 1):-1]
-        
+        delta = self.data.Close[-self.rsi_period :] - self.data.Close[-(self.rsi_period + 1) : -1]
+
         # Gains and Losses
         gains = delta * (delta > 0)
         losses = -delta * (delta < 0)
@@ -44,7 +45,7 @@ class RSI2PeriodStrategy(BaseStrategy):
         avg_loss = np.mean(losses)
 
         if avg_loss == 0:
-            rs = 100 # Avoid division by zero, strong upward momentum
+            rs = 100  # Avoid division by zero, strong upward momentum
         else:
             rs = avg_gain / avg_loss
 
@@ -52,10 +53,15 @@ class RSI2PeriodStrategy(BaseStrategy):
 
         # Get previous RSI value for crossover detection
         # This requires re-calculating RSI for the previous bar
-        if len(self.data.Close) <= self.rsi_period + 1: # Need 3 bars for current and previous RSI(2)
+        if (
+            len(self.data.Close) <= self.rsi_period + 1
+        ):  # Need 3 bars for current and previous RSI(2)
             return
 
-        delta_prev = self.data.Close[-(self.rsi_period + 1):-1] - self.data.Close[-(self.rsi_period + 2):-2]
+        delta_prev = (
+            self.data.Close[-(self.rsi_period + 1) : -1]
+            - self.data.Close[-(self.rsi_period + 2) : -2]
+        )
         gains_prev = delta_prev * (delta_prev > 0)
         losses_prev = -delta_prev * (delta_prev < 0)
         avg_gain_prev = np.mean(gains_prev)
@@ -68,28 +74,33 @@ class RSI2PeriodStrategy(BaseStrategy):
         rsi_prev = 100 - (100 / (1 + rs_prev))
 
         # Manual Crossover Logic for entry/exit
-        cross_below_oversold = (rsi_prev >= self.oversold_threshold and rsi_val < self.oversold_threshold)
-        cross_above_overbought = (rsi_prev <= self.overbought_threshold and rsi_val > self.overbought_threshold)
+        cross_below_oversold = (
+            rsi_prev >= self.oversold_threshold and rsi_val < self.oversold_threshold
+        )
+        cross_above_overbought = (
+            rsi_prev <= self.overbought_threshold and rsi_val > self.overbought_threshold
+        )
 
         # --- Entry Signal (Buy when RSI crosses below oversold) ---
         if cross_below_oversold:
             if not self.position:
                 self.buy()
-        
+
         # --- Exit Signal (Sell when RSI crosses above overbought) ---
         elif cross_above_overbought:
             if self.position:
                 self.position.close()
-
 
     def get_params(self) -> dict:
         """
         Returns a dictionary of the strategy's parameters, including inherited ones.
         """
         params = super().get_params()
-        params.update({
-            "rsi_period": self.rsi_period,
-            "oversold_threshold": self.oversold_threshold,
-            "overbought_threshold": self.overbought_threshold,
-        })
+        params.update(
+            {
+                "rsi_period": self.rsi_period,
+                "oversold_threshold": self.oversold_threshold,
+                "overbought_threshold": self.overbought_threshold,
+            }
+        )
         return params

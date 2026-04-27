@@ -1,8 +1,8 @@
 import numpy as np
-from backtesting.lib import crossover
-from typing import Optional, Any
 
+from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
+
 
 class SimpleMACrossover(BaseStrategy):
     """
@@ -23,12 +23,13 @@ class SimpleMACrossover(BaseStrategy):
     fast_ma_period = 10  # Lookback period for the fast moving average
     slow_ma_period = 20  # Lookback period for the slow moving average
 
-    def init(self, **kwargs: Any) -> None:
+    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
         """
-        Initializes the strategy. We no longer pre-calculate or access indicators here.
+        Initializes the strategy. We no longer pre-calculate or access
+        indicators here.
         """
         # Call the parent class's init to set up risk management
-        super().init(**kwargs)
+        super().init(market_adapter=market_adapter)
 
     def next(self) -> None:
         """
@@ -39,26 +40,26 @@ class SimpleMACrossover(BaseStrategy):
             return
 
         # Calculate SMAs manually using numpy
-        fast_ma_val = np.mean(self.data.Close[-self.fast_ma_period:])
-        slow_ma_val = np.mean(self.data.Close[-self.slow_ma_period:])
+        fast_ma_val = np.mean(self.data.Close[-self.fast_ma_period :])
+        slow_ma_val = np.mean(self.data.Close[-self.slow_ma_period :])
 
         # Get previous SMA values for crossover detection
         # Ensure we have enough history for the previous bar's MAs
         if len(self.data.Close) < self.slow_ma_period + 1:
             return
 
-        fast_ma_prev = np.mean(self.data.Close[-(self.fast_ma_period + 1):-1])
-        slow_ma_prev = np.mean(self.data.Close[-(self.slow_ma_period + 1):-1])
+        fast_ma_prev = np.mean(self.data.Close[-(self.fast_ma_period + 1) : -1])
+        slow_ma_prev = np.mean(self.data.Close[-(self.slow_ma_period + 1) : -1])
 
         # Manual Crossover Logic
-        cross_up = (fast_ma_prev <= slow_ma_prev and fast_ma_val > slow_ma_val)
-        cross_down = (fast_ma_prev >= slow_ma_prev and fast_ma_val < slow_ma_val)
+        cross_up = fast_ma_prev <= slow_ma_prev and fast_ma_val > slow_ma_val
+        cross_down = fast_ma_prev >= slow_ma_prev and fast_ma_val < slow_ma_val
 
         # --- Entry Signal ---
         if cross_up:
             if not self.position:
                 self.buy()
-        
+
         # --- Exit Signal ---
         elif cross_down:
             if self.position:
@@ -69,8 +70,10 @@ class SimpleMACrossover(BaseStrategy):
         Returns a dictionary of the strategy's parameters, including inherited ones.
         """
         params = super().get_params()
-        params.update({
-            "fast_ma_period": self.fast_ma_period,
-            "slow_ma_period": self.slow_ma_period,
-        })
+        params.update(
+            {
+                "fast_ma_period": self.fast_ma_period,
+                "slow_ma_period": self.slow_ma_period,
+            }
+        )
         return params
