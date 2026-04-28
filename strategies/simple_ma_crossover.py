@@ -58,7 +58,7 @@ class SimpleMACrossover(BaseStrategy):
         # --- Entry Signal ---
         if cross_up:
             if not self.position:
-                self.buy()
+                self._default_buy()
 
         # --- Exit Signal ---
         elif cross_down:
