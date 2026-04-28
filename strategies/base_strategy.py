@@ -54,6 +54,23 @@ class BaseStrategy(TrailingStrategy):
         """Calculates the base position size."""
         return 0.1
 
+    def _default_buy(self) -> None:
+        """
+        Backtest helper that honors `self.size_factor`. If size_factor == 1.0
+        we delegate to the unsized `self.buy()` (uses all available cash, the
+        backtesting.py default). Otherwise we pass `size_factor` as the
+        fractional position size — this is how meta-strategies such as
+        DynamicSizingStrategy can scale entries downward.
+
+        Note: backtesting.py interprets `size > 1` as a discrete number of
+        shares, not a multiplier, so size_factor must lie in (0, 1].
+        """
+        if self.size_factor >= 1.0:
+            self.buy()
+        else:
+            self.buy(size=max(self.size_factor, 1e-3))
+        self.entry_price = self.data.Close[-1]
+
     def get_params(self) -> dict:
         """Returns a dictionary of the base strategy's parameters."""
         return {
