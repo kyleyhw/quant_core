@@ -62,7 +62,7 @@ class BollingerBandsStrategy(BaseStrategy):
         # --- Entry Signal (Buy when price crosses below Lower Band) ---
         if cross_below_lower:
             if not self.position:
-                self.buy()
+                self._default_buy()
 
         # --- Exit Signal (Sell when price crosses above Middle Band) ---
         elif cross_above_middle:
