@@ -3,6 +3,7 @@ This module contains functions that model various broker commission structures
 for use in the backtesting engine.
 """
 
+
 def ibkr_tiered_commission(quantity: float, price: float) -> float:
     """
     Calculates trade commission based on the Interactive Brokers (IBKR) Pro
@@ -24,23 +25,24 @@ def ibkr_tiered_commission(quantity: float, price: float) -> float:
     MAXIMUM_PERCENT_OF_TRADE_VALUE = 0.01  # 1%
 
     trade_value = abs(quantity) * price
-    
+
     # Calculate base commission
     commission = abs(quantity) * PER_SHARE_RATE
-    
+
     # Enforce maximum
     max_commission = MAXIMUM_PERCENT_OF_TRADE_VALUE * trade_value
     commission = min(commission, max_commission)
-    
+
     # Enforce minimum
     commission = max(commission, MINIMUM_PER_ORDER)
-    
+
     return commission
+
 
 # --- Commission Model Registry ---
 COMMISSION_MODELS = {
     "IBKR Tiered": ibkr_tiered_commission,
     "Fixed 0.1%": 0.001,
     "Fixed 0.5%": 0.005,
-    "Zero Commission": 0.0
+    "Zero Commission": 0.0,
 }

@@ -1,9 +1,14 @@
-import pandas as pd
 import os
 
+import pandas as pd
+
 data_dir = "data/benchmark"
-pep = pd.read_csv(os.path.join(data_dir, "PEP_2024-10-01_2025-11-25.csv"), index_col="Date", parse_dates=True)
-ko = pd.read_csv(os.path.join(data_dir, "KO_2024-10-01_2025-11-25.csv"), index_col="Date", parse_dates=True)
+pep = pd.read_csv(
+    os.path.join(data_dir, "PEP_2024-10-01_2025-11-25.csv"), index_col="Date", parse_dates=True
+)
+ko = pd.read_csv(
+    os.path.join(data_dir, "KO_2024-10-01_2025-11-25.csv"), index_col="Date", parse_dates=True
+)
 
 # Rename columns
 pep.columns = [f"{col}_1" for col in pep.columns]

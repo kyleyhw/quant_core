@@ -1,8 +1,9 @@
-from typing import Optional, Any
-from backtesting import Strategy
+from typing import Any
+
 from backtesting.lib import TrailingStrategy
 
 from src.interfaces import IMarketAdapter
+
 
 class BaseStrategy(TrailingStrategy):
     """
@@ -25,11 +26,11 @@ class BaseStrategy(TrailingStrategy):
 
     def __init__(self, broker: Any, data: Any, params: dict) -> None:
         super().__init__(broker, data, params)
-        self.market_adapter: Optional[IMarketAdapter] = None
+        self.market_adapter: IMarketAdapter | None = None
         self.entry_price = None
         self.size_factor = 1.0
 
-    def init(self, market_adapter: Optional[IMarketAdapter] = None) -> None:
+    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
         """
         Initializes the strategy for either backtesting or live trading.
         """
@@ -71,7 +72,7 @@ class BaseStrategy(TrailingStrategy):
                 "symbol": symbol,
                 "quantity": quantity,
                 "action": "BUY",
-                "order_type": "MKT"
+                "order_type": "MKT",
             }
             self.market_adapter.execution_handler.place_order(order_details)
         else:
@@ -90,7 +91,7 @@ class BaseStrategy(TrailingStrategy):
                 "symbol": symbol,
                 "quantity": quantity,
                 "action": "SELL",
-                "order_type": "MKT"
+                "order_type": "MKT",
             }
             self.market_adapter.execution_handler.place_order(order_details)
         else:
@@ -98,4 +99,3 @@ class BaseStrategy(TrailingStrategy):
             size = self.calculate_position_size() * self.size_factor
             self.sell(size=size)
             self.entry_price = self.data.Close[-1]
-
