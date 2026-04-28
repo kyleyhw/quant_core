@@ -1,8 +1,10 @@
 # src/interfaces.py
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
+
 import pandas as pd
+
 
 class IConnection(ABC):
     """
@@ -10,6 +12,7 @@ class IConnection(ABC):
     Defines the standard interface for connecting, disconnecting, and checking
     the connection status.
     """
+
     @abstractmethod
     def connect(self, **kwargs: Any) -> None:
         """Establish a connection to the market."""
@@ -32,8 +35,11 @@ class IDataLoader(ABC):
     for fetching historical data, acknowledging that the data structure may
     vary significantly between different markets.
     """
+
     @abstractmethod
-    def get_historical_data(self, symbol: str, timeframe: str, start: str, end: str, **kwargs: Any) -> pd.DataFrame:
+    def get_historical_data(
+        self, symbol: str, timeframe: str, start: str, end: str, **kwargs: Any
+    ) -> pd.DataFrame:
         """
         Fetch historical market data.
 
@@ -50,8 +56,9 @@ class IExecutionHandler(ABC):
     interface for placing, cancelling, and querying orders, abstracting away
     the specific order types and contract details of a given market.
     """
+
     @abstractmethod
-    def place_order(self, order_details: Dict[str, Any]) -> Any:
+    def place_order(self, order_details: dict[str, Any]) -> Any:
         """
         Place an order in the market.
 
@@ -79,7 +86,7 @@ class IExecutionHandler(ABC):
         pass
 
     @abstractmethod
-    def get_order_status(self, order_id: Any) -> Dict[str, Any]:
+    def get_order_status(self, order_id: Any) -> dict[str, Any]:
         """
         Retrieve the current status of an order.
 
@@ -103,11 +110,17 @@ class IMarketAdapter(ABC):
     of a concrete implementation of this class should be the single entry
     point for all market-specific interactions.
     """
+
     connection: IConnection
     data_loader: IDataLoader
     execution_handler: IExecutionHandler
 
-    def __init__(self, connection: IConnection, data_loader: IDataLoader, execution_handler: IExecutionHandler) -> None:
+    def __init__(
+        self,
+        connection: IConnection,
+        data_loader: IDataLoader,
+        execution_handler: IExecutionHandler,
+    ) -> None:
         self.connection = connection
         self.data_loader = data_loader
         self.execution_handler = execution_handler

@@ -62,9 +62,9 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 37. [pending] Develop Intraday Strategy (e.g., Gap & Go, Mean Reversion).
 
 ## Phase 10: Web UI Dashboard (Streamlit)
-38. [pending] Create `dashboard/app.py`.
-39. [pending] Implement Strategy & Asset selectors.
-40. [pending] Visualize Backtest Results (Equity Curve, Drawdown, Trade Log).
+38. [completed] Create `dashboard/app.py`.
+39. [completed] Implement Strategy & Asset selectors.
+40. [completed] Visualize Backtest Results (Equity Curve, Drawdown, Trade Log).
 
 ## Phase 11: Paper Trading & Live Execution (Future)
 41. [pending] Integrate the execution module with the base strategy.

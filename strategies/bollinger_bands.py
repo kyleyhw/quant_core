@@ -1,7 +1,8 @@
 import numpy as np
-from typing import Any
 
+from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
+
 
 class BollingerBandsStrategy(BaseStrategy):
     """
@@ -18,11 +19,11 @@ class BollingerBandsStrategy(BaseStrategy):
     """
 
     # --- Strategy-Specific Parameters ---
-    bb_period = 20        # Period for the Moving Average and Standard Deviation
-    bb_std_dev = 2.0      # Number of standard deviations for the bands
+    bb_period = 20  # Period for the Moving Average and Standard Deviation
+    bb_std_dev = 2.0  # Number of standard deviations for the bands
 
-    def init(self, **kwargs: Any) -> None:
-        super().init(**kwargs)
+    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
+        super().init(market_adapter=market_adapter)
 
     def next(self) -> None:
         # Ensure we have enough data for Bollinger Bands calculation
@@ -30,13 +31,12 @@ class BollingerBandsStrategy(BaseStrategy):
             return
 
         # Calculate Middle Band (SMA)
-        middle_band = np.mean(self.data.Close[-self.bb_period:])
+        middle_band = np.mean(self.data.Close[-self.bb_period :])
 
         # Calculate Standard Deviation
-        std_dev = np.std(self.data.Close[-self.bb_period:])
+        std_dev = np.std(self.data.Close[-self.bb_period :])
 
-        # Calculate Upper and Lower Bands
-        upper_band = middle_band + (std_dev * self.bb_std_dev)
+        # Calculate Lower Band (upper band unused — strategy exits at middle band, not upper)
         lower_band = middle_band - (std_dev * self.bb_std_dev)
 
         # Get previous values for crossover detection
@@ -44,20 +44,26 @@ class BollingerBandsStrategy(BaseStrategy):
             return
 
         # Previous Middle Band
-        middle_band_prev = np.mean(self.data.Close[-(self.bb_period + 1):-1])
-        
+        middle_band_prev = np.mean(self.data.Close[-(self.bb_period + 1) : -1])
+
         # Previous Lower Band
-        lower_band_prev = middle_band_prev - (np.std(self.data.Close[-(self.bb_period + 1):-1]) * self.bb_std_dev)
+        lower_band_prev = middle_band_prev - (
+            np.std(self.data.Close[-(self.bb_period + 1) : -1]) * self.bb_std_dev
+        )
 
         # Manual Crossover Logic
-        cross_below_lower = (self.data.Close[-2] >= lower_band_prev and self.data.Close[-1] < lower_band)
-        cross_above_middle = (self.data.Close[-2] <= middle_band_prev and self.data.Close[-1] > middle_band)
+        cross_below_lower = (
+            self.data.Close[-2] >= lower_band_prev and self.data.Close[-1] < lower_band
+        )
+        cross_above_middle = (
+            self.data.Close[-2] <= middle_band_prev and self.data.Close[-1] > middle_band
+        )
 
         # --- Entry Signal (Buy when price crosses below Lower Band) ---
         if cross_below_lower:
             if not self.position:
                 self.buy()
-        
+
         # --- Exit Signal (Sell when price crosses above Middle Band) ---
         elif cross_above_middle:
             if self.position:
@@ -70,8 +76,10 @@ class BollingerBandsStrategy(BaseStrategy):
         Returns a dictionary of the strategy's parameters, including inherited ones.
         """
         params = super().get_params()
-        params.update({
-            "bb_period": self.bb_period,
-            "bb_std_dev": self.bb_std_dev,
-        })
+        params.update(
+            {
+                "bb_period": self.bb_period,
+                "bb_std_dev": self.bb_std_dev,
+            }
+        )
         return params

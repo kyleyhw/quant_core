@@ -1,20 +1,18 @@
-import asyncio
-import os
 import logging
-from typing import Optional, List, Any
+import os
+from typing import Any
 
-from ib_insync import IB, AccountValue
-from ib_insync import IB
 from dotenv import load_dotenv
+from ib_insync import IB, AccountValue
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 from src.interfaces import IConnection
+
 
 class IBConnection(IConnection):
     """
@@ -22,18 +20,20 @@ class IBConnection(IConnection):
     This class implements the IConnection interface for the IBKR market.
     """
 
-    def __init__(self,
-                 host: Optional[str] = None,
-                 port: Optional[int] = None,
-                 client_id: Optional[int] = None) -> None:
+    def __init__(
+        self, host: str | None = None, port: int | None = None, client_id: int | None = None
+    ) -> None:
         """
         Initializes the IBConnection.
         """
         self.ib = IB()
-        self.host = host or os.getenv('IB_HOST', '127.0.0.1')
-        self.port = port or int(os.getenv('IB_PORT', 7497))
-        self.client_id = client_id or int(os.getenv('IB_CLIENT_ID', 1))
-        logging.info(f"Initialized IBConnection with host={self.host}, port={self.port}, client_id={self.client_id}")
+        self.host = host or os.getenv("IB_HOST", "127.0.0.1")
+        self.port = port or int(os.getenv("IB_PORT", 7497))
+        self.client_id = client_id or int(os.getenv("IB_CLIENT_ID", 1))
+        logging.info(
+            f"Initialized IBConnection with host={self.host}, "
+            f"port={self.port}, client_id={self.client_id}"
+        )
 
     def connect(self, **kwargs: Any) -> None:
         """
@@ -68,7 +68,7 @@ class IBConnection(IConnection):
         """
         return self.ib.isConnected()
 
-    def get_account_summary(self) -> List[AccountValue]:
+    def get_account_summary(self) -> list[AccountValue]:
         """
         Retrieves the account summary from IB.
         Note: This is an example of a method specific to this concrete
@@ -94,7 +94,7 @@ def main() -> None:
                 print("Could not retrieve account summary.")
             else:
                 for item in summary:
-                    if item.tag == 'NetLiquidation':
+                    if item.tag == "NetLiquidation":
                         print(f"Net Liquidation: {item.value} {item.currency}")
                         break
     except Exception as e:
@@ -111,5 +111,3 @@ if __name__ == "__main__":
         logging.info("Program terminated by user.")
     except Exception as e:
         logging.critical(f"A critical error occurred in connection test: {e}")
-
-

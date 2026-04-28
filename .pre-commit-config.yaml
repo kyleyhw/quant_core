@@ -20,4 +20,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
-        exclude: package.lock.json|strategy_reports/
+        # Auto-generated bokeh backtest reports embed high-entropy base64
+        # blobs (inline PNGs / JS bundles) that trip the scanner; they are
+        # never sources of real secrets.
+        exclude: package.lock.json|strategies/reports/|strategies_private/reports/|uv.lock

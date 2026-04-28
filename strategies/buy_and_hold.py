@@ -1,6 +1,5 @@
-import backtesting
 from backtesting import Strategy
-from backtesting.lib import crossover
+
 
 class BuyAndHoldStrategy(Strategy):
     """
@@ -8,7 +7,7 @@ class BuyAndHoldStrategy(Strategy):
     Buys on the first available bar and holds until the end.
     Used as a baseline for benchmarking.
     """
-    
+
     def init(self) -> None:
         pass
 

@@ -1,15 +1,14 @@
 import logging
-from typing import Optional, Any
+from typing import Any
 
 import pandas as pd
-from ib_insync import Contract, BarData
+from ib_insync import BarData, Contract
 
 from src.interfaces import IDataLoader
 from src.market_adapters.ibkr.connection import IBConnection
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class IBKRDataLoader(IDataLoader):
@@ -32,7 +31,9 @@ class IBKRDataLoader(IDataLoader):
         self.ib = ib_connection.ib
         logging.info("IBKRDataLoader initialized.")
 
-    def create_contract(self, symbol: str, sec_type: str, exchange: str, currency: str) -> Optional[Contract]:
+    def create_contract(
+        self, symbol: str, sec_type: str, exchange: str, currency: str
+    ) -> Contract | None:
         """
         Creates and qualifies an IB Contract object.
         """
@@ -50,16 +51,17 @@ class IBKRDataLoader(IDataLoader):
             logging.error(f"Error qualifying contract for {symbol}: {e}")
             return None
 
-    def get_historical_data(self,
-                              symbol: str,
-                              timeframe: str,
-                              start: str,
-                              end: str,
-                              sec_type: str = 'STK',
-                              exchange: str = 'ARCA',
-                              currency: str = 'USD',
-                              **kwargs: Any
-                              ) -> pd.DataFrame:
+    def get_historical_data(
+        self,
+        symbol: str,
+        timeframe: str,
+        start: str,
+        end: str,
+        sec_type: str = "STK",
+        exchange: str = "ARCA",
+        currency: str = "USD",
+        **kwargs: Any,
+    ) -> pd.DataFrame:
         """
         Fetches historical market data for a given symbol.
         This method implements the IDataLoader interface.
@@ -76,7 +78,7 @@ class IBKRDataLoader(IDataLoader):
         # need a more sophisticated way to handle duration and bar size based
         # on the 'start' and 'end' dates and the 'timeframe'.
         # For now, we use placeholder values for demonstration.
-        duration_str = '1 Y'  # Placeholder
+        duration_str = "1 Y"  # Placeholder
         bar_size_setting = timeframe  # e.g., '1 day', '1 hour'
 
         try:
@@ -85,9 +87,9 @@ class IBKRDataLoader(IDataLoader):
                 endDateTime=end,
                 durationStr=duration_str,
                 barSizeSetting=bar_size_setting,
-                whatToShow='TRADES',
+                whatToShow="TRADES",
                 useRTH=True,
-                formatDate=1
+                formatDate=1,
             )
 
             if not bars:
@@ -95,10 +97,10 @@ class IBKRDataLoader(IDataLoader):
                 return pd.DataFrame()
 
             df = pd.DataFrame([b.__dict__ for b in bars])
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.set_index('date')
-            df = df[['open', 'high', 'low', 'close', 'volume']]
-            df.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.set_index("date")
+            df = df[["open", "high", "low", "close", "volume"]]
+            df.columns = ["Open", "High", "Low", "Close", "Volume"]
             logging.info(f"Successfully fetched {len(df)} bars for {symbol}.")
             return df
 
@@ -119,10 +121,10 @@ def main() -> None:
 
             logging.info("Attempting to fetch data for SPY...")
             df_spy = data_loader.get_historical_data(
-                symbol='SPY',
-                timeframe='1 day',
-                start='',  # Not used in this simplified example
-                end=''     # IB defaults to now if end is empty
+                symbol="SPY",
+                timeframe="1 day",
+                start="",  # Not used in this simplified example
+                end="",  # IB defaults to now if end is empty
             )
 
             if not df_spy.empty:
