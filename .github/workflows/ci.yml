@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, type-check and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # strategies_private is a separate private repository. The default
+      # GITHUB_TOKEN cannot read it, so submodules are deliberately not
+      # initialised. Nothing under testing/ depends on it.
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      # Non-blocking for now. `ty` reports pre-existing diagnostics across the
+      # dashboard and the IBKR adapter that predate this workflow; failing the
+      # build on them would mean fixing all of them here rather than in the
+      # phase that owns that code. Plan item: Phase 27, reconcile the codebase
+      # with its own type annotations.
+      - name: Type-check (advisory)
+        run: uv run ty check
+        continue-on-error: true
+
+      - name: Test
+        run: uv run pytest

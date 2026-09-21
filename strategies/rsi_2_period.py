@@ -1,6 +1,5 @@
 import numpy as np
 
-from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
 
 
@@ -23,10 +22,7 @@ class RSI2PeriodStrategy(BaseStrategy):
     oversold_threshold = 10
     overbought_threshold = 90
 
-    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
-        super().init(market_adapter=market_adapter)
-
-    def next(self) -> None:
+    def on_bar(self) -> None:
         # Ensure we have enough data for RSI calculation
         # RSI(2) needs at least 2 periods for initial calculation, plus one more for previous value
         if len(self.data.Close) <= self.rsi_period:

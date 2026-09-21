@@ -16,7 +16,8 @@ if project_root not in sys.path:
 import inspect
 from pathlib import Path
 
-from src.backtesting_extensions import CustomBacktest
+from backtesting import Backtest
+
 from src.commission_models import COMMISSION_MODELS
 from strategies.base_strategy import BaseStrategy
 
@@ -277,7 +278,7 @@ def main(argv: list[str] | None = None) -> None:
         SignalExecutor.underlying_strategy = StrategyClass
         bt_strategy_class = SignalExecutor
 
-    bt = CustomBacktest(
+    bt = Backtest(
         data, bt_strategy_class, cash=args.cash, commission=COMMISSION_MODELS[args.commission]
     )
 
