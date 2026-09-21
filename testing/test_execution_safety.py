@@ -1,79 +1,59 @@
-import os
-import sys
-import unittest
+"""Order-level safety limits enforced by ExecutionManager.
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+These limits are per-order only. Account-level limits (daily loss, total
+drawdown) are Phase 17 and are deliberately not covered here.
+"""
 
-# Ensure UTF-8 stdout so the ✓/✗ markers in test output don't blow up on
-# Windows consoles that default to cp1252.
-_reconfigure = getattr(sys.stdout, "reconfigure", None)
-if callable(_reconfigure):
-    _reconfigure(encoding="utf-8")
+import pytest
 
 from src.execution import ExecutionManager
 
-
-class TestExecutionSafety(unittest.TestCase):
-    def setUp(self) -> None:
-        self.em = ExecutionManager()
-
-    def test_execution_safety(self) -> None:
-        print("\n--- Testing Execution Safety ---")
-        current_price = 150.0
-        symbol = "AAPL"
-
-        # 1. Valid Order
-        print("\n[TEST 1] Valid order (10 shares @ market)...")
-        order_valid = {"action": "BUY", "quantity": 10, "order_type": "MKT", "symbol": symbol}
-        self.assertTrue(self.em.check_order_limits(order_valid, current_price))
-        print("✓ Valid order passed.")
-
-        # 2. Max Shares Violation
-        print("\n[TEST 2] Max shares violation (101 shares > 100 limit)...")
-        order_shares = {"action": "BUY", "quantity": 101, "order_type": "MKT", "symbol": symbol}
-        with self.assertRaises(ValueError) as cm:
-            self.em.check_order_limits(order_shares, current_price)
-        print(f"✓ Max Shares caught: {cm.exception}")
-
-        # 3. Max Dollars Violation
-        print("\n[TEST 3] Max dollars violation (50 shares * $150 = $7,500 > $5,000 limit)...")
-        order_dollars = {"action": "BUY", "quantity": 50, "order_type": "MKT", "symbol": symbol}
-        with self.assertRaises(ValueError) as cm:
-            self.em.check_order_limits(order_dollars, current_price)
-        print(f"✓ Max Dollars caught: {cm.exception}")
-
-        # 4. Fat Finger Price Violation
-        print(
-            "\n[TEST 4] Fat finger price violation "
-            "(Limit $200 vs Market $150 = 33% deviation > 5% limit)..."
-        )
-        order_fat_finger = {
-            "action": "BUY",
-            "quantity": 1,
-            "order_type": "LMT",
-            "limit_price": 200.0,
-            "symbol": symbol,
-        }
-        with self.assertRaises(ValueError) as cm:
-            self.em.check_order_limits(order_fat_finger, current_price)
-        print(f"✓ Fat Finger caught: {cm.exception}")
-
-        # 5. Valid Limit Order (within 5% deviation)
-        print("\n[TEST 5] Valid limit order (within 5% price deviation)...")
-        order_valid_limit = {
-            "action": "BUY",
-            "quantity": 10,
-            "order_type": "LMT",
-            "limit_price": 155.0,
-            "symbol": symbol,
-        }
-        self.assertTrue(self.em.check_order_limits(order_valid_limit, current_price))
-        print("✓ Valid limit order passed.")
+PRICE = 150.0
+SYMBOL = "AAPL"
 
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("IBKR Quant Core - Execution Safety Tests")
-    print("=" * 60)
-    unittest.main(verbosity=2)
+@pytest.fixture
+def manager() -> ExecutionManager:
+    return ExecutionManager()
+
+
+def order(**overrides) -> dict:
+    base = {"action": "BUY", "quantity": 10, "order_type": "MKT", "symbol": SYMBOL}
+    base.update(overrides)
+    return base
+
+
+def test_market_order_within_limits_passes(manager):
+    assert manager.check_order_limits(order(), PRICE) is True
+
+
+def test_limit_order_within_price_deviation_passes(manager):
+    assert manager.check_order_limits(order(order_type="LMT", limit_price=155.0), PRICE) is True
+
+
+def test_quantity_above_max_shares_is_blocked(manager):
+    with pytest.raises(ValueError, match="exceeds limit of 100"):
+        manager.check_order_limits(order(quantity=101), PRICE)
+
+
+def test_quantity_at_max_shares_is_allowed(manager):
+    # 100 shares would breach the dollar limit at $150, so price down to stay
+    # inside it and isolate the share check.
+    assert manager.check_order_limits(order(quantity=100), 40.0) is True
+
+
+def test_notional_above_max_dollar_value_is_blocked(manager):
+    # 50 shares at $150 is $7,500, past the $5,000 cap, while staying under
+    # the 100-share cap so this test fails for one reason only.
+    with pytest.raises(ValueError, match=r"exceeds limit of \$5000"):
+        manager.check_order_limits(order(quantity=50), PRICE)
+
+
+def test_limit_price_far_from_market_is_blocked(manager):
+    with pytest.raises(ValueError, match="deviates"):
+        manager.check_order_limits(order(quantity=1, order_type="LMT", limit_price=200.0), PRICE)
+
+
+def test_market_order_ignores_price_deviation(manager):
+    """A market order carries no limit price, so the deviation check must not fire."""
+    assert manager.check_order_limits(order(quantity=1, limit_price=200.0), PRICE) is True

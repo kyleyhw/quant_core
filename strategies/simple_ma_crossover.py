@@ -1,6 +1,5 @@
 import numpy as np
 
-from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
 
 
@@ -15,7 +14,8 @@ class SimpleMACrossover(BaseStrategy):
 
     Signal Logic:
     - Entry: A "fast" SMA crossing over a "slow" SMA.
-    - Exit: Managed by the parent BaseStrategy (trailing stop-loss and take-profit).
+    - Exit: A "fast" SMA crossing back under a "slow" SMA, or the trailing
+      stop-loss / take-profit applied by BaseStrategy.
     """
 
     # --- Strategy-Specific Parameters ---
@@ -23,15 +23,7 @@ class SimpleMACrossover(BaseStrategy):
     fast_ma_period = 10  # Lookback period for the fast moving average
     slow_ma_period = 20  # Lookback period for the slow moving average
 
-    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
-        """
-        Initializes the strategy. We no longer pre-calculate or access
-        indicators here.
-        """
-        # Call the parent class's init to set up risk management
-        super().init(market_adapter=market_adapter)
-
-    def next(self) -> None:
+    def on_bar(self) -> None:
         """
         The main strategy logic loop, called for each data point (bar).
         """

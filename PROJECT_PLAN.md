@@ -81,39 +81,48 @@ trustworthy. This phase is small on purpose: it is the only thing standing betwe
 here and building on a foundation that lies. It ends by locking the fixes in with
 CI so they cannot regress while the dashboard work is underway.
 
-41. [pending] Fix the trailing stop units. `BaseStrategy.init` calls
+41. [completed] Fix the trailing stop units. `BaseStrategy.init` calls
    `set_trailing_sl(self.stop_loss_pct)`, but that method takes a multiple of ATR,
    not a percentage. The library provides `set_trailing_pct` for this. Measured on
    a synthetic series, the stop lands at 0.028% of price instead of 2%, roughly
    seventy times tighter, cutting average hold from 7.33 bars to 1.46.
-42. [pending] Fix the `next()` contract. `SimpleMACrossover` and
+42. [completed] Fix the `next()` contract. `SimpleMACrossover` and
    `RSI2PeriodStrategy` override `next()` without calling `super().next()`, so the
    trailing stop never runs for them at all. `BollingerBandsStrategy` does call it.
    The three public strategies therefore run under three different exit regimes and
    are not comparable.
-43. [pending] Restructure `BaseStrategy` so this cannot recur: make `next()` final
+43. [completed] Restructure `BaseStrategy` so this cannot recur: make `next()` final
    and give strategies an `on_bar()` hook that the base class always wraps, rather
    than relying on every subclass remembering to call up.
-44. [pending] Implement take profit. The take-profit branch in `BaseStrategy.next`
+44. [completed] Implement take profit. The take-profit branch in `BaseStrategy.next`
    is a bare `pass`. The documentation advertises a 5% take profit.
-45. [pending] Unify position sizing. Backtests call `buy()` with no size, which
+45. [completed] Unify position sizing. Backtests call `buy()` with no size, which
    commits all available cash, while the live path calls `calculate_position_size`,
    which returns a hardcoded fraction. The two disagree and `risk_percent` is read
    by neither.
-46. [pending] Make `risk_percent` real: size from account equity and stop distance,
+46. [completed] Make `risk_percent` real: size from account equity and stop distance,
    so that a losing trade costs approximately the configured fraction of equity.
-47. [pending] Guard the division in `CustomBroker._adjusted_price`, which divides by
-   order size and will raise if size is ever zero. Remove the stale
-   stream-of-consciousness comments in that method while there.
-48. [pending] Adopt `pytest` and migrate the two existing `unittest` files.
-49. [pending] A test asserting that every strategy honours the risk parameters it
+47. [completed] Remove `CustomBroker` / `CustomBacktest`. The intended fix was a
+   guard on the division in `_adjusted_price`, but the class turned out to be
+   obsolete and harmful: backtesting.py has supported callable commissions
+   natively since 0.6, so the override charged commission twice (3.2 points of
+   return on an eleven-trade run), crashed with `TypeError: 'float' object is not
+   callable` for the three float models in `COMMISSION_MODELS`, and silently
+   discarded `spread`. `CustomBacktest` survives as a deprecated alias for
+   `backtesting.Backtest` so existing imports keep resolving.
+48. [completed] Adopt `pytest` and migrate the two existing `unittest` files.
+49. [completed] A test asserting that every strategy honours the risk parameters it
    declares. This is the test that would have caught the three bugs above.
-50. [pending] Regression tests pinning backtest metrics for a fixed dataset, so no
+50. [completed] Regression tests pinning backtest metrics for a fixed dataset, so no
    later refactor can silently change results.
-51. [pending] GitHub Actions workflow running ruff, ty, and the test suite. There is
+51. [completed] GitHub Actions workflow running ruff, ty, and the test suite. There is
    no `.github/` directory today.
-52. [pending] Regenerate every report in `strategies/reports/` once the above land,
-   and update the benchmark linked from `README.md`.
+52. [completed] Regenerate every report in `strategies/reports/` once the above land,
+   and update the benchmark linked from `README.md`. Across the thirty
+   risk-managed runs, mean return fell from +12.47% to -0.29% and mean maximum
+   drawdown fell from -16.93% to -6.61%. `BuyAndHoldStrategy` is unchanged, since
+   it declares no risk parameters. The reported edge of the public strategies was
+   largely an artifact of trading the full book with a stop that never fired.
 
 ## Phase 12: Dashboard Rebuild
 Supersedes the Streamlit dashboard delivered in Phase 10. Direction: the "Ledger

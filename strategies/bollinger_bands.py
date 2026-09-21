@@ -1,6 +1,5 @@
 import numpy as np
 
-from src.interfaces import IMarketAdapter
 from strategies.base_strategy import BaseStrategy
 
 
@@ -22,10 +21,7 @@ class BollingerBandsStrategy(BaseStrategy):
     bb_period = 20  # Period for the Moving Average and Standard Deviation
     bb_std_dev = 2.0  # Number of standard deviations for the bands
 
-    def init(self, market_adapter: IMarketAdapter | None = None) -> None:
-        super().init(market_adapter=market_adapter)
-
-    def next(self) -> None:
+    def on_bar(self) -> None:
         # Ensure we have enough data for Bollinger Bands calculation
         if len(self.data.Close) < self.bb_period:
             return
@@ -68,8 +64,6 @@ class BollingerBandsStrategy(BaseStrategy):
         elif cross_above_middle:
             if self.position:
                 self.position.close()
-
-        super().next()
 
     def get_params(self) -> dict:
         """

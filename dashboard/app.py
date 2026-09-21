@@ -5,9 +5,7 @@ import sys
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as st_components
-from backtesting import Strategy
-
-from src.backtesting_extensions import CustomBacktest
+from backtesting import Backtest, Strategy
 
 # --- Add project root and check for data ---
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,9 +24,10 @@ def create_signal_executor(base_strategy_class: type[Strategy]) -> type[Strategy
     """
 
     class SignalExecutor(base_strategy_class):  # ty:ignore[unsupported-base]
-        def next(self):
-            # Call the underlying strategy's next method
-            signal = super().next()
+        def on_bar(self):
+            # Call the underlying strategy's per-bar hook. BaseStrategy owns
+            # next(), so the wrapper hooks on_bar() instead.
+            signal = super().on_bar()
 
             if signal == "buy":
                 if self.position.is_short:
@@ -300,7 +299,7 @@ if st.sidebar.button("Run Backtest"):
                     st.error("Pairs trading requires 2 tickers. Please select 2 assets.")
                     st.stop()
 
-            bt = CustomBacktest(
+            bt = Backtest(
                 df,
                 bt_strategy_class,
                 cash=10000,  # Default cash

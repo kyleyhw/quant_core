@@ -14,11 +14,12 @@ Strategies should import the `FeatureEngineer` class and use it in their `next()
 ```python
 from src.feature_engineering import FeatureEngineer
 
+
 class MyStrategy(Strategy):
     def init(self):
         self.fe = FeatureEngineer()
         # ...
-    
+
     def next(self):
         # Calculate features for the current window
         df_features = self.fe.calculate_features(self.data.df)
