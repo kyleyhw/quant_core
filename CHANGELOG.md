@@ -3,6 +3,17 @@
 All notable changes to quant-core. Versions follow semantic versioning. Before
 1.0, a minor version bump signals a breaking change.
 
+## [0.2.1] - 2026-09-23
+
+### Fixed
+
+- `quant_core.testing`: the probe measured a short trade's stop distance as
+  `close - sl`, which is negative because a short's stop sits above the price.
+  The conformance test's stop-distance check therefore failed for any strategy
+  that goes short, and one trading both sides averaged towards zero.
+  `Observation.stop_distance_pct` now measures on the losing side of the trade.
+  Long-only strategies see identical numbers.
+
 ## [0.2.0] - 2026-09-23
 
 The platform becomes an installable package that other packages build on. Code
