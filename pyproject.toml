@@ -26,6 +26,14 @@ dependencies = [
 [project.scripts]
 qc = "quant_core.cli:main"
 
+# The platform's reference strategies register through the same entry-point
+# group a downstream package uses, so there is one discovery path for both.
+[project.entry-points."quant_core.strategies"]
+BollingerBandsStrategy = "quant_core.strategies.bollinger_bands:BollingerBandsStrategy"
+BuyAndHoldStrategy = "quant_core.strategies.buy_and_hold:BuyAndHoldStrategy"
+RSI2PeriodStrategy = "quant_core.strategies.rsi_2_period:RSI2PeriodStrategy"
+SimpleMACrossover = "quant_core.strategies.simple_ma_crossover:SimpleMACrossover"
+
 [tool.uv]
 package = true
 
@@ -66,11 +74,7 @@ known-first-party = ["quant_core", "testing", "tools"]
 # in library code.
 [tool.ruff.lint.per-file-ignores]
 "testing/generate_baseline.py" = ["E402"]
-"src/quant_core/dashboard/app.py" = ["E402"]
-"src/quant_core/dashboard/dashboard_utils.py" = ["E402"]
 "testing/debug_scripts/dashboard_utils_smoke.py" = ["E402"]
-"src/quant_core/backtest/benchmark.py" = ["E402"]
-"src/quant_core/backtest/run_backtest.py" = ["E402"]
 "src/quant_core/market_adapters/ibkr/connection.py" = ["E402"]
 "strategies_private/ensemble_signal_strategy.py" = ["E402"]
 "strategies_private/portfolio_allocation_strategy.py" = ["E402"]
@@ -78,7 +82,6 @@ known-first-party = ["quant_core", "testing", "tools"]
 "testing/debug_scripts/test_data_loading.py" = ["E402"]
 "testing/debug_scripts/test_ui_logic.py" = ["E402"]
 "testing/test_execution_safety.py" = ["E402"]
-"tools/supervisor.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"
