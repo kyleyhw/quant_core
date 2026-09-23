@@ -1,6 +1,6 @@
 # Dataset Documentation
 
-This document provides metadata and descriptions for all datasets used in the `ibkr_quant_core` project for research, backtesting, and model training.
+This document describes the sample datasets shipped with `quant_core` for backtesting, benchmarks and examples.
 
 ---
 
@@ -11,9 +11,7 @@ This document provides metadata and descriptions for all datasets used in the `i
 -   **Date Range:** Approximately one year of recent hourly data. The exact range can vary depending on when the file was last updated.
 -   **Timeframe:** 1-hour bars.
 -   **Description:** This dataset contains hourly Open, High, Low, Close, and Volume (OHLCV) data for the SPY ETF, which tracks the S&P 500 index.
--   **Primary Use:**
-    -   Used as the primary dataset for developing and backtesting single-instrument strategies.
-    -   Serves as the input for training the XGBoost and Hidden Markov Model (HMM) regime detection models.
+-   **Primary Use:** Single-instrument backtests on intraday bars, and examples of model training on shared features.
 
 ---
 
@@ -24,8 +22,7 @@ This document provides metadata and descriptions for all datasets used in the `i
 -   **Date Range:** 2010-01-01 to 2023-12-31.
 -   **Timeframe:** 1-day bars.
 -   **Description:** Daily OHLCV data for PepsiCo, Inc.
--   **Primary Use:**
-    -   Serves as the first leg in the PEP/KO pairs trading strategy.
+-   **Primary Use:** The first leg of a sample two-asset dataset (see `data_assets = 2` in [Strategy Development](./strategy_development.md)).
 
 ---
 
@@ -36,5 +33,4 @@ This document provides metadata and descriptions for all datasets used in the `i
 -   **Date Range:** 2010-01-01 to 2023-12-31.
 -   **Timeframe:** 1-day bars.
 -   **Description:** Daily OHLCV data for The Coca-Cola Company. PEP and KO are classic examples of a stock pair that is highly correlated due to being in the same industry, making them a suitable candidate for a pairs trading strategy.
--   **Primary Use:**
-    -   Serves as the second leg in the PEP/KO pairs trading strategy.
+-   **Primary Use:** The second leg of the sample two-asset dataset.

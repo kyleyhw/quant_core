@@ -51,10 +51,43 @@ Run strict static type analysis.
 uvx ty check
 ```
 
+### 4. Tests
+
+```bash
+uv run pytest
+```
+
+The suite covers the risk-parameter conformance test, commission, a pinned
+regression baseline for the reference strategies, feature engineering and the
+execution safety layer.
+
+### 5. No private references
+
+```bash
+uv run python tools/check_private_references.py
+```
+
+Fails if any tracked file names the private repository or one of its
+strategies. It stores only hashes of those names, so the check itself publishes
+nothing.
+
+## Continuous integration
+
+Every push and pull request runs `.github/workflows/ci.yml`:
+
+- **Lint, type-check and test:** the private-reference check, `ruff check`,
+  `ruff format --check`, `ty check` (advisory for now), and `pytest`.
+- **Installed package stands alone:** builds the wheel, installs it into a clean
+  environment, and runs `qc`, the tests and a benchmark from outside the
+  checkout. This is what a downstream package gets.
+
+Merging a version bump to `master` tags the release through
+`.github/workflows/release.yml`.
+
 ## Configuration
 
 - **Ruff**: Configured in `pyproject.toml` under the `[tool.ruff]` section.
-- **Pre-commit**: Configured in `.pre-commit-config.yaml`.
+- **Pre-commit**: Configured in `.pre-commit-config.yaml`. It runs ruff, the private-reference check, `ty` and `detect-secrets`.
 - **Ty**: Zero-config by design, but adheres to standard type hinting practices.
 
 ## Troubleshooting

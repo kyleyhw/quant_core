@@ -6,8 +6,6 @@
 | Strategy Type | Strategies | Training Data Source |
 | :--- | :--- | :--- |
 | **Baseline** | `BuyAndHoldStrategy` | N/A |
-| **Machine Learning** | `MLRegimeStrategy`, `EnsembleSignalStrategy` | **SPY (2010-2023)** |
-| **Meta-Strategies** | `DynamicSizing`, `MetaRegimeFilter` | N/A (Uses underlying logic) |
 | **Technical** | `SimpleMACrossover`, `RSI2Period`, `BollingerBands` | N/A (Rule-based) |
 
 ## Performance Metrics by Asset
