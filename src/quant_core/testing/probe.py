@@ -21,10 +21,16 @@ class Observation:
 
     @property
     def stop_distance_pct(self) -> float | None:
-        """How far the stop sits below the close, as a fraction of the close."""
+        """
+        How far the stop sits from the close, as a fraction of the close.
+
+        Measured on the losing side of the trade: below the close for a long,
+        above it for a short. Positive whenever the stop is where it should be.
+        """
         if self.sl is None or self.close <= 0:
             return None
-        return (self.close - self.sl) / self.close
+        gap = self.close - self.sl if self.size > 0 else self.sl - self.close
+        return gap / self.close
 
 
 @dataclass
