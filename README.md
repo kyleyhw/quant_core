@@ -58,7 +58,7 @@ This documentation provides a detailed overview of the framework and its IBKR im
     -   Explains the Smart Data system, including ephemeral vs. permanent caching storage strategies.
 
 7.  **[Building on quant-core](./docs/building_on_quant_core.md)**
-    -   Registering your own strategies and `qc` commands from a separate package, the development loop across two repositories, and the conformance test.
+    -   Registering your own strategies and `qc` commands from a separate package, carrying quant-core as a submodule or depending on a release tag, and the conformance test.
 
 8.  **[CLI Reference](./docs/cli_usage.md)**
     -   Every `qc` command and option.
@@ -89,6 +89,7 @@ quant_core/
 ├── data/                 # Sample price data (CSV)
 ├── docs/                 # Detailed documentation
 ├── reports/              # Generated backtest and benchmark reports
+├── .github/workflows/    # CI and the release workflow
 ├── src/quant_core/       # The installable package
 │   ├── interfaces.py     # << CORE: Abstract interfaces for the framework
 │   ├── registry.py       # Strategy and command discovery via entry points
@@ -103,12 +104,15 @@ quant_core/
 │   └── strategies/
 │       ├── base_strategy.py  # Parent class for all strategies
 │       └── ...               # Reference strategies
-└── testing/              # pytest suite, including the strategy conformance test
+├── testing/              # pytest suite, including the strategy conformance test
+└── tools/                # Repository checks, such as the private-reference guard
 ```
 
 Proprietary strategies are not part of this repository. They live in their own
-packages, which install `quant-core` and register their strategies through an
-entry point. See [Building on quant-core](./docs/building_on_quant_core.md).
+packages, which install `quant-core`, either from a release tag or from a
+submodule, and register their strategies through an entry point. See
+[Building on quant-core](./docs/building_on_quant_core.md). Releases are tagged
+`vX.Y.Z` and described in the [changelog](./CHANGELOG.md).
 
 ## Getting Started
 
@@ -139,6 +143,10 @@ entry point. See [Building on quant-core](./docs/building_on_quant_core.md).
     uv run qc benchmark     # every installed strategy across data/benchmark
     ```
     See the **[CLI reference](./docs/cli_usage.md)** for every command.
+6.  **Run the tests:**
+    ```bash
+    uv run pytest
+    ```
 
 ## Core Architectural Rules
 

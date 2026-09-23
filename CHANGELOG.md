@@ -39,8 +39,8 @@ Every breaking change a downstream package has to absorb is in this one release.
 - **Strategy discovery uses entry points.** The platform no longer scans
   directories, and the dashboard's private mode is gone. A strategy is available
   if an installed package registers it in the `quant_core.strategies` group.
-- **The `train-regime` and `train-ensemble` commands are removed from `qc`.**
-  They trained models that are not part of the platform. A package can register
+- **The two model-training commands are removed from `qc`.** They trained
+  models that are not part of the platform. A package can register
   its own commands through the `quant_core.commands` group.
 - **`qc benchmark`:** `--scope` is removed. Use `--strategies NAME ...` to filter,
   and `--output-dir` to choose where the report goes.
@@ -70,8 +70,15 @@ different results, usually worse:
 - **Position size follows the risk budget:** `risk_percent / stop_loss_pct` of
   equity, capped at 1.0. With the defaults that is half the account. Before,
   backtests went all in regardless of `risk_percent`.
-- **Commission is charged once.** The removed `CustomBroker` charged callable
-  commission models twice, and raised `TypeError` for float rates.
+- **Commission is charged once, per order.** The removed `CustomBroker` charged a
+  callable commission model twice: once through backtesting.py's own commission
+  handling, and again by folding `commission(size, price) / size` into the fill
+  price. For an order sized as a fraction of equity, such as an all-in `buy()`,
+  `size` is that fraction, not a share count, so the second charge added roughly
+  the whole minimum ticket fee to the price of every share. On a one-year daily
+  backtest this came to 16 times the correct commission for a stock near $230,
+  and 37 times for one near $24. It also raised `TypeError` for float rates.
+  With commission set to zero, the old and new engines give identical results.
 
 A strategy that genuinely wants the old behaviour of no stop and full size
 should set `stop_loss_pct = 0` and `take_profit_pct = 0` explicitly.
