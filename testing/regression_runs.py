@@ -9,11 +9,11 @@ from typing import Any
 
 from backtesting import Backtest, Strategy
 
-from src.commission_models import COMMISSION_MODELS
-from strategies.bollinger_bands import BollingerBandsStrategy
-from strategies.buy_and_hold import BuyAndHoldStrategy
-from strategies.rsi_2_period import RSI2PeriodStrategy
-from strategies.simple_ma_crossover import SimpleMACrossover
+from quant_core.commission_models import COMMISSION_MODELS
+from quant_core.strategies.bollinger_bands import BollingerBandsStrategy
+from quant_core.strategies.buy_and_hold import BuyAndHoldStrategy
+from quant_core.strategies.rsi_2_period import RSI2PeriodStrategy
+from quant_core.strategies.simple_ma_crossover import SimpleMACrossover
 
 CASH = 10_000
 

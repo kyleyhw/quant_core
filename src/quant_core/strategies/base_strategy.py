@@ -3,7 +3,7 @@ from typing import Any
 
 from backtesting.lib import TrailingStrategy
 
-from src.interfaces import IMarketAdapter
+from quant_core.interfaces import IMarketAdapter
 
 
 class BaseStrategy(TrailingStrategy):

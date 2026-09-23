@@ -1,7 +1,7 @@
 # src/market_adapters/ibkr/adapter.py
 from typing import Any
 
-from src.interfaces import IMarketAdapter
+from quant_core.interfaces import IMarketAdapter
 
 from .connection import IBConnection
 from .data_loader import IBKRDataLoader

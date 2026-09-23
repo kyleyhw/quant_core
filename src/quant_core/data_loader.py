@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from src.data_downloader import download_data
+from quant_core.data_downloader import download_data
 
 DEFAULT_PERMANENT_TICKERS = {"SPY", "QQQ", "IWM", "GLD", "TLT"}
 

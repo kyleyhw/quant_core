@@ -9,7 +9,7 @@ sys.path.insert(0, os.getcwd())
 
 from backtesting import Strategy
 
-from src.backtesting_extensions import CustomBacktest
+from quant_core.backtesting_extensions import CustomBacktest
 
 
 # Mock commission

@@ -9,9 +9,9 @@ of the dashboard's options could not complete a backtest.
 import pytest
 from backtesting import Backtest
 
-from src.backtesting_extensions import CustomBacktest
-from src.commission_models import COMMISSION_MODELS, ibkr_tiered_commission
-from strategies.simple_ma_crossover import SimpleMACrossover
+from quant_core.backtesting_extensions import CustomBacktest
+from quant_core.commission_models import COMMISSION_MODELS, ibkr_tiered_commission
+from quant_core.strategies.simple_ma_crossover import SimpleMACrossover
 
 CASH = 10_000
 

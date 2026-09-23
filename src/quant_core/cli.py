@@ -1,8 +1,9 @@
 import argparse
 
-from run_backtesting import benchmark, run_backtest
-from src import data_downloader
 from strategies_private.research import train_ensemble_models, train_regime_model
+
+from quant_core import data_downloader
+from quant_core.backtest import benchmark, run_backtest
 
 
 def handle_backtest(args):

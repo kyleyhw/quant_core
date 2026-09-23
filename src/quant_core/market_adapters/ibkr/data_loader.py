@@ -4,8 +4,8 @@ from typing import Any
 import pandas as pd
 from ib_insync import BarData, Contract
 
-from src.interfaces import IDataLoader
-from src.market_adapters.ibkr.connection import IBConnection
+from quant_core.interfaces import IDataLoader
+from quant_core.market_adapters.ibkr.connection import IBConnection
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

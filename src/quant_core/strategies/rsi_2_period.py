@@ -1,6 +1,6 @@
 import numpy as np
 
-from strategies.base_strategy import BaseStrategy
+from quant_core.strategies.base_strategy import BaseStrategy
 
 
 class RSI2PeriodStrategy(BaseStrategy):

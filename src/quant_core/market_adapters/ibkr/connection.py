@@ -11,7 +11,7 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-from src.interfaces import IConnection
+from quant_core.interfaces import IConnection
 
 
 class IBConnection(IConnection):

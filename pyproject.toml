@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-qc = "src.cli:main"
+qc = "quant_core.cli:main"
 
 [tool.uv]
 package = true
@@ -45,32 +45,20 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*", "run_backtesting*", "strategies_private*"]
+where = ["src"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 # Generated backtest reports: bokeh dumps and non-UTF-8 bytes, not source.
-extend-exclude = ["strategies/reports", "strategies_private/reports"]
+extend-exclude = ["reports"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
 ignore = []
 
-# strategies_private is a git submodule. Without this, import sorting depends on
-# whether the submodule happens to be checked out, so the same file passes locally
-# and fails in CI.
 [tool.ruff.lint.isort]
-known-first-party = [
-    "dashboard",
-    "run_backtesting",
-    "src",
-    "strategies",
-    "strategies_private",
-    "testing",
-    "tools",
-]
+known-first-party = ["quant_core", "testing", "tools"]
 
 # E402 (module-level import not at top of file) is intentional in scripts that
 # bootstrap sys.path before importing first-party packages. Suppress per-file
@@ -78,12 +66,12 @@ known-first-party = [
 # in library code.
 [tool.ruff.lint.per-file-ignores]
 "testing/generate_baseline.py" = ["E402"]
-"dashboard/app.py" = ["E402"]
-"dashboard/dashboard_utils.py" = ["E402"]
-"dashboard/test_dashboard_utils.py" = ["E402"]
-"run_backtesting/benchmark.py" = ["E402"]
-"run_backtesting/run_backtest.py" = ["E402"]
-"src/market_adapters/ibkr/connection.py" = ["E402"]
+"src/quant_core/dashboard/app.py" = ["E402"]
+"src/quant_core/dashboard/dashboard_utils.py" = ["E402"]
+"testing/debug_scripts/dashboard_utils_smoke.py" = ["E402"]
+"src/quant_core/backtest/benchmark.py" = ["E402"]
+"src/quant_core/backtest/run_backtest.py" = ["E402"]
+"src/quant_core/market_adapters/ibkr/connection.py" = ["E402"]
 "strategies_private/ensemble_signal_strategy.py" = ["E402"]
 "strategies_private/portfolio_allocation_strategy.py" = ["E402"]
 "strategies_private/research/generate_trade_dataset.py" = ["E402"]

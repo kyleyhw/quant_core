@@ -18,8 +18,8 @@ from pathlib import Path
 
 from backtesting import Backtest
 
-from src.commission_models import COMMISSION_MODELS
-from strategies.base_strategy import BaseStrategy
+from quant_core.commission_models import COMMISSION_MODELS
+from quant_core.strategies.base_strategy import BaseStrategy
 
 
 # --- Signal Executor Wrapper (for signal-based strategies) ---
@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     # --- 1. Load Data ---
-    from src.data_loader import SmartLoader
+    from quant_core.data_loader import SmartLoader
 
     loaded_dfs = []
 
