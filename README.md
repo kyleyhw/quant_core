@@ -2,6 +2,21 @@
 
 This project provides a market-agnostic, Python-based algorithmic trading framework. It is designed with an "Open Core" model: the core infrastructure is public and extensible, while specific trading strategies and trained machine learning models can remain private. Its initial concrete implementation is for Interactive Brokers (IBKR).
 
+## Dashboard
+
+Backtest any installed strategy on sample data from a browser: pick a strategy
+and an asset in the sidebar, press **Run Backtest**, and read the equity curve,
+trades and metrics. It can also fetch fresh prices from Yahoo Finance.
+
+```bash
+git clone https://github.com/kyleyhw/quant_core.git && cd quant_core
+uv sync
+uv run qc dashboard        # then open http://localhost:8501
+```
+
+The same dashboard can be hosted for free on Streamlit Community Cloud; see
+[deploy/streamlit](./deploy/streamlit/README.md).
+
 ## Purpose
 
 The primary goal is to provide a robust, extensible foundation for developing and implementing algorithmic trading strategies. The framework is designed to evolve from traditional technical analysis to advanced Machine Learning models, with a consistent and strong emphasis on risk management, regardless of the underlying market.
@@ -87,6 +102,7 @@ quant_core/
 ├── PROJECT_PLAN.md       # Roadmap
 ├── pyproject.toml        # Package metadata, entry points, tool config
 ├── data/                 # Sample price data (CSV)
+├── deploy/streamlit/     # Hosting the dashboard on Streamlit Community Cloud
 ├── docs/                 # Detailed documentation
 ├── reports/              # Generated backtest and benchmark reports
 ├── .github/workflows/    # CI and the release workflow
