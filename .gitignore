@@ -27,3 +27,7 @@ logs/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Package build output
+build/
+dist/

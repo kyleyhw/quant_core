@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 # Mock streamlit before importing utils
 sys.modules["streamlit"] = MagicMock()
 
-from dashboard import dashboard_utils
+from quant_core.dashboard import dashboard_utils
 
 
 class TestDataLoading(unittest.TestCase):

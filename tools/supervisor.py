@@ -2,13 +2,8 @@ import logging
 import subprocess
 import sys
 import time
-from pathlib import Path
 
-# Add project root to path to import src
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
-
-from src.notifications import Notifier, Severity
+from quant_core.notifications import Notifier, Severity
 
 # Configure logging
 logging.basicConfig(

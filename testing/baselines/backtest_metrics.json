@@ -1,0 +1,62 @@
+{
+  "BollingerBandsStrategy/zero": {
+    "# Trades": 9.0,
+    "Equity Final [$]": 9848.684634,
+    "Exposure Time [%]": 16.25,
+    "Max. Drawdown [%]": -3.116325,
+    "Profit Factor": 0.679781,
+    "Return [%]": -1.513154,
+    "Sharpe Ratio": -0.527424,
+    "Win Rate [%]": 44.444444
+  },
+  "BuyAndHoldStrategy/zero": {
+    "# Trades": 1.0,
+    "Equity Final [$]": 10499.4946,
+    "Exposure Time [%]": 99.5,
+    "Max. Drawdown [%]": -10.915689,
+    "Profit Factor": null,
+    "Return [%]": 4.994946,
+    "Sharpe Ratio": 0.332012,
+    "Win Rate [%]": 100.0
+  },
+  "RSI2PeriodStrategy/zero": {
+    "# Trades": 43.0,
+    "Equity Final [$]": 9839.007421,
+    "Exposure Time [%]": 53.0,
+    "Max. Drawdown [%]": -5.098481,
+    "Profit Factor": 0.875905,
+    "Return [%]": -1.609926,
+    "Sharpe Ratio": -0.325307,
+    "Win Rate [%]": 60.465116
+  },
+  "SimpleMACrossover/fixed-10bps": {
+    "# Trades": 11.0,
+    "Equity Final [$]": 9822.11359,
+    "Exposure Time [%]": 22.5,
+    "Max. Drawdown [%]": -3.543494,
+    "Profit Factor": 0.632753,
+    "Return [%]": -1.778864,
+    "Sharpe Ratio": -0.464567,
+    "Win Rate [%]": 27.272727
+  },
+  "SimpleMACrossover/ibkr-tiered": {
+    "# Trades": 11.0,
+    "Equity Final [$]": 9922.550631,
+    "Exposure Time [%]": 22.5,
+    "Max. Drawdown [%]": -3.085459,
+    "Profit Factor": 0.818267,
+    "Return [%]": -0.774494,
+    "Sharpe Ratio": -0.20527,
+    "Win Rate [%]": 36.363636
+  },
+  "SimpleMACrossover/zero": {
+    "# Trades": 11.0,
+    "Equity Final [$]": 9931.294143,
+    "Exposure Time [%]": 22.5,
+    "Max. Drawdown [%]": -3.060017,
+    "Profit Factor": 0.835391,
+    "Return [%]": -0.687059,
+    "Sharpe Ratio": -0.180999,
+    "Win Rate [%]": 36.363636
+  }
+}

@@ -8,7 +8,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from dashboard import dashboard_utils
+from quant_core.dashboard import dashboard_utils
 
 
 def test_pairs_data_merging() -> None:

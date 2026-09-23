@@ -1,6 +1,6 @@
 [project]
 name = "quant-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Algorithmic Trading Framework"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,7 +24,15 @@ dependencies = [
 ]
 
 [project.scripts]
-qc = "src.cli:main"
+qc = "quant_core.cli:main"
+
+# The platform's reference strategies register through the same entry-point
+# group a downstream package uses, so there is one discovery path for both.
+[project.entry-points."quant_core.strategies"]
+BollingerBandsStrategy = "quant_core.strategies.bollinger_bands:BollingerBandsStrategy"
+BuyAndHoldStrategy = "quant_core.strategies.buy_and_hold:BuyAndHoldStrategy"
+RSI2PeriodStrategy = "quant_core.strategies.rsi_2_period:RSI2PeriodStrategy"
+SimpleMACrossover = "quant_core.strategies.simple_ma_crossover:SimpleMACrossover"
 
 [tool.uv]
 package = true
@@ -36,6 +44,7 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
     "detect-secrets>=1.5.0",
+    "pytest>=8.3.0",
     "hypothesis>=6.152.4",
     "networkx>=3.4.2",
     "pre-commit>=4.5.0",
@@ -44,37 +53,47 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*", "run_backtesting*", "strategies_private*"]
+where = ["src"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# Generated backtest reports: bokeh dumps and non-UTF-8 bytes, not source.
+extend-exclude = ["reports"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
 ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["quant_core", "testing", "tools"]
 
 # E402 (module-level import not at top of file) is intentional in scripts that
 # bootstrap sys.path before importing first-party packages. Suppress per-file
 # rather than globally so the rule still catches accidental misordered imports
 # in library code.
 [tool.ruff.lint.per-file-ignores]
-"dashboard/app.py" = ["E402"]
-"dashboard/dashboard_utils.py" = ["E402"]
-"dashboard/test_dashboard_utils.py" = ["E402"]
-"run_backtesting/benchmark.py" = ["E402"]
-"run_backtesting/run_backtest.py" = ["E402"]
-"src/market_adapters/ibkr/connection.py" = ["E402"]
-"strategies_private/ensemble_signal_strategy.py" = ["E402"]
-"strategies_private/portfolio_allocation_strategy.py" = ["E402"]
-"strategies_private/research/generate_trade_dataset.py" = ["E402"]
+"testing/generate_baseline.py" = ["E402"]
+"testing/debug_scripts/dashboard_utils_smoke.py" = ["E402"]
+"src/quant_core/market_adapters/ibkr/connection.py" = ["E402"]
 "testing/debug_scripts/test_data_loading.py" = ["E402"]
 "testing/debug_scripts/test_ui_logic.py" = ["E402"]
 "testing/test_execution_safety.py" = ["E402"]
-"tools/supervisor.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 
+
+[tool.pytest.ini_options]
+testpaths = ["testing"]
+pythonpath = ["."]
+# testing/debug_scripts holds ad-hoc scripts that happen to be named test_*.
+# They need live network access and are not part of the suite. Phase 16 folds
+# them in or deletes them.
+addopts = "-q --strict-markers --ignore=testing/debug_scripts"
+filterwarnings = [
+    # backtesting.py warns when a position is still open on the final bar. The
+    # suite opts into finalize_trades, so this is noise.
+    "ignore:Some trades remain open:UserWarning",
+]

@@ -57,95 +57,106 @@ This documentation provides a detailed overview of the framework and its IBKR im
 6.  **[Data Management](./docs/data_management.md)**
     -   Explains the Smart Data system, including ephemeral vs. permanent caching storage strategies.
 
+7.  **[Building on quant-core](./docs/building_on_quant_core.md)**
+    -   Registering your own strategies and `qc` commands from a separate package, the development loop across two repositories, and the conformance test.
+
+8.  **[CLI Reference](./docs/cli_usage.md)**
+    -   Every `qc` command and option.
+
 ## Sample Backtest Reports
 
 To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
 
-*   **Latest Public Benchmark Report:** [./strategies/reports/benchmark_report_multi_asset_20251127_010136.md](./strategies/reports/benchmark_report_multi_asset_20251127_010136.md)
-*   **Individual Strategy Reports:** View all generated reports and plots in the [strategies/reports/](./strategies/reports/) directory.
+*   **Latest Public Benchmark Report:** [./reports/benchmark_report_multi_asset_20260923_102549.md](./reports/benchmark_report_multi_asset_20260923_102549.md)
+> **Numbers moved on 2026-09-21.** Reports generated before this date ran with a
+> trailing stop set roughly seventy times tighter than documented, with no stop at
+> all on two of the three public strategies, with no take-profit, and fully
+> invested regardless of `risk_percent`. With those fixed, mean return across the
+> thirty risk-managed runs falls from +12.47% to -0.29% and mean maximum drawdown
+> falls from -16.93% to -6.61%. Earlier reports are kept for history but should
+> not be quoted.
+
+*   **Individual Strategy Reports:** View all generated reports and plots in the [reports/](./reports/) directory.
 
 ## Directory Structure
 
 ```
 quant_core/
-├── .env                  # Local environment variables (IGNORED BY GIT)
-├── README.md             # This file: Project overview and high-level documentation
-├── requirements.txt      # Project dependencies
-├── setup.py              # Makes the core framework installable
-├── run_backtesting/
-│   └── benchmark.py      # Script for multi-strategy comparison
-├── data/                 # Historical CSV data (Ignored by Git)
-├── docs/                 # Detailed project documentation
-│   ├── market_agnostic_framework.md
-│   ├── core_infrastructure.md
-│   └── ...
-├── src/
+├── README.md
+├── CHANGELOG.md          # Releases and migration notes
+├── PROJECT_PLAN.md       # Roadmap
+├── pyproject.toml        # Package metadata, entry points, tool config
+├── data/                 # Sample price data (CSV)
+├── docs/                 # Detailed documentation
+├── reports/              # Generated backtest and benchmark reports
+├── src/quant_core/       # The installable package
 │   ├── interfaces.py     # << CORE: Abstract interfaces for the framework
-│   ├── market_adapters/  # << CORE: Concrete market implementations
-│   │   └── ibkr/         # The IBKR "plug-in"
-│   │       ├── connection.py
-│   │       ├── data_loader.py
-│   │       └── execution.py
+│   ├── registry.py       # Strategy and command discovery via entry points
 │   ├── execution.py      # Market-agnostic safety check layer
 │   ├── feature_engineering.py
-│   └── notifications.py
-└── strategies/
-    ├── base_strategy.py  # Parent class for all strategies (for backtesting & live)
-    └── private/          # Git Submodule for proprietary strategies
+│   ├── notifications.py
+│   ├── cli.py            # The `qc` command
+│   ├── backtest/         # run_backtest.py and benchmark.py
+│   ├── dashboard/        # Streamlit app
+│   ├── market_adapters/
+│   │   └── ibkr/         # The IBKR "plug-in"
+│   └── strategies/
+│       ├── base_strategy.py  # Parent class for all strategies
+│       └── ...               # Reference strategies
+└── testing/              # pytest suite, including the strategy conformance test
 ```
+
+Proprietary strategies are not part of this repository. They live in their own
+packages, which install `quant-core` and register their strategies through an
+entry point. See [Building on quant-core](./docs/building_on_quant_core.md).
 
 ## Getting Started
 
-1.  **Clone the repository and its submodules:**
+1.  **Clone and install:**
     ```bash
-    git clone --recurse-submodules [repository-url]
+    git clone https://github.com/kyleyhw/quant_core.git
     cd quant_core
+    uv sync
     ```
-2.  **Install dependencies:**
-    Install the core framework in editable mode with IBKR support.
-    ```bash
-    pip install -e .[ibkr]
-    ```
-3.  **Set up environment variables:**
+2.  **Set up environment variables:**
     Create a `.env` file in the root directory for sensitive information (e.g., IBKR connection details).
-4.  **Connect to IBKR TWS/Gateway:**
-    Ensure your Interactive Brokers Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
-5.  **Launch the Dashboard (UI):**
-    The project includes a Streamlit-based dashboard for easy backtesting and analysis.
+3.  **Connect to IBKR TWS/Gateway:**
+    Only needed for live or paper trading. Ensure Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
+4.  **Launch the Dashboard (UI):**
     ```bash
-    python -m streamlit run dashboard/app.py
+    uv run qc dashboard
     ```
     **Using the Dashboard:**
-    - **Select Strategy**: Choose a strategy from the sidebar.
-    - **Select Asset**: Choose an asset (e.g., SPY) or multiple assets for pair strategies.
+    - **Select Strategy**: Choose any installed strategy from the sidebar.
+    - **Select Asset**: Choose an asset (e.g., SPY), or two assets for a strategy that trades a pair.
     - **Date Range**: Adjust the start and end dates for the backtest.
     - **Run Backtest**: Click the "Run Backtest" button to execute.
     - **View Results**: Analyze the interactive plots, metrics, and trade logs.
-    - **Private Mode**: Enable this checkbox to load proprietary strategies from the `strategies_private` submodule.
-    - **Download Data**: Enable this checkbox to force a fresh download of historical data from Yahoo Finance, overriding any locally cached files.
-6.  **Run Command-Line Backtests:**
-    Alternatively, use the benchmark script to evaluate strategy performance via CLI.
+    - **Download Data**: Enable this toggle to fetch fresh data from Yahoo Finance for the session, without saving to disk.
+5.  **Run from the command line:**
     ```bash
-    python run_backtesting/benchmark.py
+    uv run qc strategies    # what is installed
+    uv run qc benchmark     # every installed strategy across data/benchmark
     ```
+    See the **[CLI reference](./docs/cli_usage.md)** for every command.
 
 ## Core Architectural Rules
 
 ### 1. Extensibility via Market Adapters
-The framework is designed to be extended. New markets can be added by creating a new adapter in `src/market_adapters/` and implementing the classes defined in `src/interfaces.py`. The core logic in strategies should remain unchanged.
+The framework is designed to be extended. New markets can be added by creating a new adapter under `quant_core.market_adapters` and implementing the classes defined in `quant_core.interfaces`. The core logic in strategies should remain unchanged.
 
 ### 2. Machine Learning Workflow (Prevention of Skew)
-- **Training:** Occurs in the `strategies_private/research/` directory. Trained models are saved to `strategies_private/models/`.
-- **Inference:** Occurs within strategies. Models are loaded from `strategies_private/models/`.
-- **Feature Consistency:** Both training and inference code **MUST** import feature generation logic (e.g., indicators) from `src/feature_engineering.py`. This is a critical rule to prevent training-serving skew.
+- **Training and models:** Live with the package that owns the strategy, not in this repository.
+- **Inference:** Occurs within strategies.
+- **Feature Consistency:** Both training and inference code **MUST** import feature generation logic (e.g., indicators) from `quant_core.feature_engineering`. This is a critical rule to prevent training-serving skew.
 
 ### 3. Execution & Safety (The "Fat Finger" Layer)
-- **Position Sizing:** Calculated dynamically in `strategies/base_strategy.py`.
-- **Hard Limits:** The market-agnostic `src/execution.py` module enforces hard safety limits (e.g., `MAX_SHARES_PER_ORDER`, `MAX_DOLLAR_VALUE_PER_ORDER`) on a generic order dictionary *before* it is passed to a specific market adapter.
+- **Position Sizing:** Calculated dynamically in `quant_core.strategies.base_strategy`.
+- **Hard Limits:** The market-agnostic `quant_core.execution` module enforces hard safety limits (e.g., `MAX_SHARES_PER_ORDER`, `MAX_DOLLAR_VALUE_PER_ORDER`) on a generic order dictionary *before* it is passed to a specific market adapter.
 - If a strategy generates an order that exceeds these limits, the system **MUST** raise an `Exception` and send a critical notification.
 
 ### 4. Notifications
-- The system defines a `Notifier` class in `src/notifications.py`.
+- The system defines a `Notifier` class in `quant_core.notifications`.
 - **Triggers:**
   - **Critical:** Connection loss, Order Rejection, "Fat Finger" block.
   - **Info:** Trade execution, Daily P&L summary.

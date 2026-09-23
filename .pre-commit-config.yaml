@@ -8,6 +8,12 @@ repos:
       - id: ruff-format
   - repo: local
     hooks:
+      - id: no-private-references
+        name: no private references
+        entry: uv run python tools/check_private_references.py
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: ty
         name: ty
         # Uses the version pinned in the project's uv.lock
@@ -23,4 +29,4 @@ repos:
         # Auto-generated bokeh backtest reports embed high-entropy base64
         # blobs (inline PNGs / JS bundles) that trip the scanner; they are
         # never sources of real secrets.
-        exclude: package.lock.json|strategies/reports/|strategies_private/reports/|uv.lock
+        exclude: package.lock.json|reports/|uv.lock

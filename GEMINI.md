@@ -17,15 +17,25 @@ The goal is to evolve from simple technical analysis strategies to Machine Learn
 The project strictly follows this structure. Do not suggest code that violates this hierarchy.
 
 ```text
-ibkr_trading_bot/
+quant_core/
 ├── README.md              # Readme file
+├── CHANGELOG.md           # Releases and migration notes
 ├── docs/                  # Documentation
-├── data/                  # Historical CSVs (GitIgnored)
-├── backtesting/
-│   ├── run_backtest.py    # Single strategy deep-dive
-│   └── benchmark.py       # Multi-strategy comparison tournament
+├── data/                  # Historical CSVs
+├── reports/               # Generated backtest and benchmark reports
+├── src/quant_core/        # The installable package
+│   ├── backtest/          # run_backtest.py (single strategy), benchmark.py (all installed)
+│   ├── dashboard/         # Streamlit app, launched with `qc dashboard`
+│   ├── strategies/        # BaseStrategy and the reference strategies
+│   └── market_adapters/   # Broker integrations (IBKR)
+├── testing/               # pytest suite
 └── GEMINI.md              # This file
 ```
+
+Proprietary strategies do not live in this repository. They live in separate
+packages that install `quant-core` as a dependency and register their strategies
+through the `quant_core.strategies` entry-point group. This repository must never
+contain, import or name them.
 
 ## Core Architectural Rules
 
@@ -34,15 +44,13 @@ ibkr_trading_bot/
         - **Critical**: Connection loss, Order Rejection, "Fat Finger" block.
         - **Info**: Trade execution, Daily P&L summary.
     - **Commands**:
-        - `git push origin master` (Main)
-        - `cd strategies_private; git push origin main` (Submodule)
+        - `git push origin master`
 
 2. **Development Guidelines**
     - **Type Hinting**: All functions must have Python type hints.
 
 3. **Full Set of Reports**
     - This term refers to the complete output of the backtesting and benchmarking process. It includes:
-        1.  A detailed backtest report for each individual strategy (both public and private). A "report" includes both the markdown summary file and the HTML interactive plot.
-        2.  A public benchmark report, comparing all public strategies.
-        3.  An "all" benchmark report, comparing all public and private strategies.
-    - Each report is to be generated in its appropriate directory (`/strategies/reports` for public, and `/strategies_private/reports` for private and "all" benchmark reports) to ensure no private information is publicly visible.
+        1.  A detailed backtest report for each reference strategy (`qc backtest`). A "report" includes both the markdown summary file and the HTML interactive plot.
+        2.  A benchmark report comparing every installed strategy (`qc benchmark`).
+    - Reports are written to `reports/` under the directory the command runs in. Run from this repository, only the reference strategies are installed, so nothing proprietary can appear in a report here.
