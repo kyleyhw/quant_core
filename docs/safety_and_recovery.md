@@ -4,7 +4,7 @@ This document outlines the safety mechanisms built into the IBKR Open-Core Tradi
 
 ## 1. In-Program Safety (The "Fat Finger" Layer)
 
-The `src/execution.py` module acts as a final gatekeeper before any order is submitted to Interactive Brokers.
+The `src/quant_core/execution.py` module acts as a final gatekeeper before any order is submitted to Interactive Brokers.
 
 ### Hard Limits
 These limits are hard-coded in `ExecutionManager` and **cannot** be overridden by strategy logic.
@@ -22,7 +22,7 @@ These limits are hard-coded in `ExecutionManager` and **cannot** be overridden b
 - The strategy execution is halted for that specific tick.
 
 ### Strategy-Level Risk Management
-Implemented in `strategies/base_strategy.py`.
+Implemented in `src/quant_core/strategies/base_strategy.py`.
 
 - **Trailing Stop-Loss**: Defaults to **2%**. If the price drops 2% from the highest point since entry, the position is closed.
 - **Take-Profit**: Defaults to **5%**. If the price rises 5% from the entry price, the position is closed.

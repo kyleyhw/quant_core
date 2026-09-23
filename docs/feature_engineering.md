@@ -1,7 +1,7 @@
 # Feature Engineering Documentation
 
 ## Overview
-The `src/feature_engineering.py` module is the **single source of truth** for all technical indicator calculations in the IBKR Quant Core system.
+The `src/quant_core/feature_engineering.py` module is the **single source of truth** for all technical indicator calculations in the IBKR Quant Core system.
 
 **Purpose:**
 - **Consistency:** Ensures that the indicators used during model training (Research) are mathematically identical to those used during live trading (Inference).
@@ -9,18 +9,18 @@ The `src/feature_engineering.py` module is the **single source of truth** for al
 
 ## Usage
 ### 1. In Strategies
-Strategies should import the `FeatureEngineer` class and use it in their `next()` method (or `init` for vector operations) to calculate indicators.
+Strategies should import the `FeatureEngineer` class, create it in `on_init()`, and use it in `on_bar()` to calculate indicators.
 
 ```python
-from src.feature_engineering import FeatureEngineer
+from quant_core.feature_engineering import FeatureEngineer
+from quant_core.strategies.base_strategy import BaseStrategy
 
 
-class MyStrategy(Strategy):
-    def init(self):
+class MyStrategy(BaseStrategy):
+    def on_init(self):
         self.fe = FeatureEngineer()
-        # ...
 
-    def next(self):
+    def on_bar(self):
         # Calculate features for the current window
         df_features = self.fe.calculate_features(self.data.df)
 ```
@@ -29,7 +29,7 @@ class MyStrategy(Strategy):
 Training scripts import the same class to generate features for the entire historical dataset.
 
 ```python
-from src.feature_engineering import FeatureEngineer
+from quant_core.feature_engineering import FeatureEngineer
 
 df = pd.read_csv("data/SPY_2010_2023.csv")
 fe = FeatureEngineer()
@@ -57,7 +57,7 @@ The `calculate_features` method adds the following columns to the DataFrame:
 - **ATR_14**: Average True Range (14-period).
 
 ## Adding New Indicators
-1.  Open `src/feature_engineering.py`.
+1.  Open `src/quant_core/feature_engineering.py`.
 2.  Add the calculation logic using `talib` or `pandas`.
 3.  Ensure the column name is descriptive and unique.
 4.  Update this documentation.
