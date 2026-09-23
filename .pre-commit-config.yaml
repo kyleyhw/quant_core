@@ -8,6 +8,12 @@ repos:
       - id: ruff-format
   - repo: local
     hooks:
+      - id: no-private-references
+        name: no private references
+        entry: uv run python tools/check_private_references.py
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: ty
         name: ty
         # Uses the version pinned in the project's uv.lock

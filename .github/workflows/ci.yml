@@ -31,6 +31,10 @@ jobs:
       - name: Sync dependencies
         run: uv sync --locked
 
+      # The public platform must never contain, import or name private code.
+      - name: No private references
+        run: uv run python tools/check_private_references.py
+
       - name: Lint
         run: uv run ruff check .
 
@@ -40,11 +44,56 @@ jobs:
       # Non-blocking for now. `ty` reports pre-existing diagnostics across the
       # dashboard and the IBKR adapter that predate this workflow; failing the
       # build on them would mean fixing all of them here rather than in the
-      # phase that owns that code. Plan item: Phase 27, reconcile the codebase
-      # with its own type annotations.
+      # phase that owns that code. See the housekeeping phase in PROJECT_PLAN.md.
       - name: Type-check (advisory)
         run: uv run ty check
         continue-on-error: true
 
       - name: Test
         run: uv run pytest
+
+  standalone:
+    name: Installed package stands alone
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Proves what a downstream package will get: the built wheel, installed into
+    # a clean environment, run from a directory that is not this checkout, with
+    # no source tree on the path.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Build the wheel
+        run: uv build --wheel
+
+      # Pin dependencies to the lockfile so the regression baseline, which was
+      # generated against the locked engine version, applies.
+      - name: Install the wheel into a clean environment
+        run: |
+          uv export --frozen --no-dev --no-emit-project --no-hashes -o "$RUNNER_TEMP/constraints.txt"
+          uv venv "$RUNNER_TEMP/clean"
+          uv pip install --python "$RUNNER_TEMP/clean/bin/python" \
+            -c "$RUNNER_TEMP/constraints.txt" dist/*.whl pytest
+
+      - name: Run the suite and the CLI outside the source tree
+        run: |
+          WORK="$RUNNER_TEMP/standalone"
+          mkdir -p "$WORK" && cp -r testing "$WORK/" && cd "$WORK"
+          PY="$RUNNER_TEMP/clean/bin/python"
+          QC="$RUNNER_TEMP/clean/bin/qc"
+          "$PY" -c "import quant_core; assert 'site-packages' in quant_core.__file__, quant_core.__file__; print('quant-core', quant_core.__version__)"
+          "$QC" --help
+          "$QC" strategies
+          "$PY" -m pytest -q -p no:cacheprovider testing --ignore=testing/debug_scripts
+          "$PY" -c "import os; from quant_core.testing import synthetic_ohlcv; os.makedirs('data/benchmark', exist_ok=True); synthetic_ohlcv().rename_axis('Date').to_csv('data/benchmark/FIXTURE_synthetic.csv')"
+          "$QC" benchmark
+          ls reports/benchmark_report_multi_asset_*.md
