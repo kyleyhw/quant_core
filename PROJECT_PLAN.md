@@ -155,7 +155,14 @@ three things behind that belong to it.
    `next()` will fail to import, which breaks the private dashboard mode and the
    private benchmark. The submodule is a separate repository, so this cannot be
    done from here. Until it lands, pin the submodule to a commit that predates the
-   Phase 11 base-class change, or expect private mode to fail loudly.
+   Phase 11 base-class change, or expect private mode to fail loudly. The
+   migration is mechanical (rename `next` to `on_bar`, drop `super().next()`
+   calls, and have wrappers delegate to the wrapped strategy's `on_bar`), but the
+   behaviour change is not: every migrated strategy gains a working trailing
+   stop, a working take-profit, and risk-derived sizing, so its numbers will
+   move. A strategy that genuinely wants the old all-in, no-stop behaviour sets
+   `stop_loss_pct = 0` and `take_profit_pct = 0` explicitly rather than working
+   around the base class.
 54. [pending] Update `docs/strategy_development.md`, which still tells strategy
    authors to call `super().next()` and describes the take-profit logic that was a
    `pass`. The example in `docs/feature_engineering.md` also shows `next()`.
@@ -333,7 +340,9 @@ slow bleed across many orders. Must land before any live order is sent.
 122. [pending] A typed, validated settings object for every runtime setting: order
    and account limits, connection details, notification channels, data paths.
    Hard-coded class attributes and loose `.env` reads both go, and a bad value
-   fails at startup rather than at the first order.
+   fails at startup rather than at the first order. Ships with a committed
+   `.env.example` naming every variable, so a new checkout of the platform, or of
+   a private repository built on it, knows what it needs without reading source.
 123. [pending] Pre-trade risk check combining order limits, account limits, and
    portfolio concentration in one gate.
 
@@ -356,7 +365,10 @@ account-level loss limits.
    `docs/safety_and_recovery.md`. No code implements this yet.
 129. [pending] Enable the paper trading monitor screen built in Phase 12.
 130. [pending] Conduct a dry run against live market data with execution disabled.
-131. [pending] Begin paper trading with a small capital allocation.
+131. [pending] Paper trade a reference strategy for long enough to exercise every
+   part of the live path: signals, fills, partial fills, a rejection, a
+   reconnect, a restart with open positions. The P&L is not the deliverable; the
+   event log and the reconciliation are.
 132. [pending] Shadow reconciliation: replay each day's live bars through the backtest
    engine and diff the simulated fills against the real ones. The gap is
    implementation shortfall, and it is the one number that says whether
@@ -404,7 +416,8 @@ the contract explicit before Phases 21 through 24 widen it.
    are an installable package that declares itself rather than a git submodule
    found by `sys.path` manipulation and a hardcoded `known-first-party` entry.
    Retires the submodule pattern, and with it the whole class of failure item 53
-   belongs to.
+   belongs to. The dashboard's "private mode" toggle goes at the same time: the
+   strategy list comes from the registry, and what is installed is what shows.
 146. [pending] Strategy registry with declared metadata: asset class, required
    lookback, supported timeframes, author, version.
 147. [pending] Parameter schema on each strategy, so the dashboard can generate its
@@ -472,7 +485,13 @@ Absorbs the data half of the original Phase 9.
 175. [pending] A data catalogue screen showing what is cached, its date range,
    quality flags, and freshness.
 176. [pending] Record a content hash of the input data on every run.
-177. [pending] A plain note on data licensing. yfinance scrapes Yahoo and automated
+177. [pending] Decide what data the platform ships. The deterministic synthetic
+   fixture in `testing/conftest.py` is redistributable and drives the tests; the
+   cached Yahoo CSVs under `data/benchmark/` are not clearly redistributable and
+   should not be what a fresh checkout depends on. Either find a permissively
+   licensed real dataset for the demo and the reference strategies, or make the
+   synthetic fixture good enough to be the demo.
+178. [pending] A plain note on data licensing. yfinance scrapes Yahoo and automated
    use sits outside its terms; say so in the docs and name the provider to move
    to before anything trades real money.
 
@@ -485,39 +504,39 @@ Each reference strategy comes with a doc page saying which platform features it
 exercises and, plainly, that it is not expected to make money. The private
 repository is where research happens, with these as its worked examples.
 
-178. [pending] A research notebook template: load the fixture, run a strategy
+179. [pending] A research notebook template: load the fixture, run a strategy
    through the service module, render the Phase 15 statistics. The private
    repository's starting point for trying an idea.
-179. [pending] Reference pairs strategy on public data, exercising two-asset data
+180. [pending] Reference pairs strategy on public data, exercising two-asset data
    loading and the Phase 21 signal-and-sizer split. The private pairs strategy
    currently has no public counterpart, so the platform's pairs support is
    untested in the open.
-180. [pending] Reference regime-aware strategy, exercising the shared regime feature
+181. [pending] Reference regime-aware strategy, exercising the shared regime feature
    from Phase 20.
-181. [pending] Reference multi-timeframe strategy, exercising the alignment from
+182. [pending] Reference multi-timeframe strategy, exercising the alignment from
    Phase 14.
-182. [pending] Reference machine-learning strategy with a small model trained on
+183. [pending] Reference machine-learning strategy with a small model trained on
    public data, exercising the whole Phase 24 lifecycle: feature store, registry,
    drift check, retrain gate.
-183. [pending] Reference portfolio strategy, exercising Phase 21's multi-asset
+184. [pending] Reference portfolio strategy, exercising Phase 21's multi-asset
    engine, a construction method and the rebalance schedule.
-184. [pending] Reference intraday strategy on the Phase 22 minute bars. Original
+185. [pending] Reference intraday strategy on the Phase 22 minute bars. Original
    Phase 9, items 35 and 37, reframed: VWAP and gap logic as a demonstration of
    intraday support, not as a candidate for capital.
-185. [pending] Retire or rewrite the existing four technical strategies to the same
+186. [pending] Retire or rewrite the existing four technical strategies to the same
    standard: one doc page each, one conformance run each, and the same
    disclaimer.
 
 ## Phase 24: Machine Learning Lifecycle
-186. [pending] A test that asserts training and inference produce identical features.
+187. [pending] A test that asserts training and inference produce identical features.
    `README.md` calls this critical; nothing enforces it.
-187. [pending] Feature store with point-in-time correctness.
-188. [pending] Model registry recording training data range, hyperparameters, metrics,
+188. [pending] Feature store with point-in-time correctness.
+189. [pending] Model registry recording training data range, hyperparameters, metrics,
    and the code hash.
-189. [pending] Drift monitoring on live feature distributions against training.
-190. [pending] Explainability reporting for any registered model, demonstrated on
+190. [pending] Drift monitoring on live feature distributions against training.
+191. [pending] Explainability reporting for any registered model, demonstrated on
    the Phase 23 reference model.
-191. [pending] Automated retraining schedule with promotion gates, using the purged
+192. [pending] Automated retraining schedule with promotion gates, using the purged
    cross-validation from Phase 15 as the gate.
 
 ## Phase 25: Service Layer & API
@@ -525,14 +544,14 @@ Phase 12's service module made the core callable from Python. This makes it
 callable from anywhere. The dashboard becomes one client among several and can be
 replaced without touching the engine, and a phone can reach the kill switch.
 
-192. [pending] An HTTP API over the service module: runs, strategies, the data
+193. [pending] An HTTP API over the service module: runs, strategies, the data
    catalogue, risk state, live status, and the kill switch.
-193. [pending] Authentication. It will expose live positions.
-194. [pending] Move the dashboard and the CLI onto the API, so there is one path into
+194. [pending] Authentication. It will expose live positions.
+195. [pending] Move the dashboard and the CLI onto the API, so there is one path into
    the engine.
-195. [pending] A minimal status page that works on a phone: equity, open positions,
+196. [pending] A minimal status page that works on a phone: equity, open positions,
    the last few events, the kill switch. The page to open when an alert fires.
-196. [pending] Decide whether the Streamlit dashboard stays or is replaced by a
+197. [pending] Decide whether the Streamlit dashboard stays or is replaced by a
    frontend built against the API, with the Phase 12 design canvas as the
    specification. The three places Streamlit fought the design in Phase 12 are
    the evidence for this decision.
@@ -540,54 +559,54 @@ replaced without touching the engine, and a phone can reach the kill switch.
 ## Phase 26: Operational Readiness
 Run continuously alongside the phases above rather than as a block.
 
-197. [pending] Structured logging to `logs/` with rotation.
-198. [pending] External heartbeat / dead man's switch for the supervisor. Carried over
+198. [pending] Structured logging to `logs/` with rotation.
+199. [pending] External heartbeat / dead man's switch for the supervisor. Carried over
    from Phase 6, item 28.
-199. [pending] Telegram notifier. `docs/safety_and_recovery.md` promises
+200. [pending] Telegram notifier. `docs/safety_and_recovery.md` promises
    "Discord/Telegram" but `src/notifications.py` implements Discord only.
-200. [pending] Daily summary notification at market close.
-201. [pending] Alert routing rules by severity and channel.
-202. [pending] Health endpoint exposing connection state, last bar time, and open
+201. [pending] Daily summary notification at market close.
+202. [pending] Alert routing rules by severity and channel.
+203. [pending] Health endpoint exposing connection state, last bar time, and open
    position count.
-203. [pending] A scheduler for the recurring jobs this plan has accumulated: data
+204. [pending] A scheduler for the recurring jobs this plan has accumulated: data
    refresh (Phase 22), the daily paper run (Phase 18), the decay check
    (Phase 15), retraining (Phase 24). One place to define them, one log to read.
-204. [pending] A nightly benchmark against the test fixture, checked against the
+205. [pending] A nightly benchmark against the test fixture, checked against the
    regression baseline, so an engine regression surfaces overnight rather than at
    the next release.
-205. [pending] Move run storage to SQLite once the file-based store strains.
-206. [pending] Deployment and operations runbook.
+206. [pending] Move run storage to SQLite once the file-based store strains.
+207. [pending] Deployment and operations runbook.
 
 ## Phase 27: Distribution & Documentation
 For a platform, this phase is the product surface.
 
-207. [pending] Publish the platform as an installable package, so the private
+208. [pending] Publish the platform as an installable package, so the private
    repository depends on a version rather than a checkout.
-208. [pending] A release process: tag, changelog entry, package build, docs build,
+209. [pending] A release process: tag, changelog entry, package build, docs build,
    in one command.
-209. [pending] Docker image and a one-command local setup.
-210. [pending] Example notebook gallery, seeded by the Phase 23 template.
-211. [pending] A public demo running on sample data with private strategies disabled.
-212. [pending] Document every extension point as a contract: strategies, market
+210. [pending] Docker image and a one-command local setup.
+211. [pending] Example notebook gallery, seeded by the Phase 23 template.
+212. [pending] A public demo running on sample data with private strategies disabled.
+213. [pending] Document every extension point as a contract: strategies, market
    adapters, data providers, commission models, risk checks, notifiers. Each page
    names the interface, the conformance test to run, and the versioning promise.
-213. [pending] Published documentation site generated from `docs/`.
-214. [pending] Contribution guide and pull request template.
+214. [pending] Published documentation site generated from `docs/`.
+215. [pending] Contribution guide and pull request template.
 
 ## Phase 28: Housekeeping
 Run continuously. None of these blocks anything.
 
-215. [pending] Deduplicate `run_backtesting/run_backtest.py` and `benchmark.py`, 845
+216. [pending] Deduplicate `run_backtesting/run_backtest.py` and `benchmark.py`, 845
    lines between them sharing strategy discovery, data loading and report
    writing, onto the Phase 12 service module.
-216. [pending] Reconcile the codebase with its own type annotations so `ty` can
+217. [pending] Reconcile the codebase with its own type annotations so `ty` can
    become blocking in Phase 16.
-217. [pending] Implement or delete `src/metrics.py`, which is an empty file. It is the
+218. [pending] Implement or delete `src/metrics.py`, which is an empty file. It is the
    natural home for the Phase 15 statistics.
-218. [pending] Replace the `main.py` hello-world stub, or remove it in favour of the
+219. [pending] Replace the `main.py` hello-world stub, or remove it in favour of the
    `qc` console script.
-219. [pending] Reconcile documentation with behaviour, including the safety and
+220. [pending] Reconcile documentation with behaviour, including the safety and
    recovery doc's claims about reconciliation and notification channels.
-220. [pending] Reframe `README.md`. It opens the reports section with "to understand
+221. [pending] Reframe `README.md`. It opens the reports section with "to understand
    the framework's performance", which invites reading reference-strategy numbers
    as a track record. Say what the strategies are for and what the numbers are.
