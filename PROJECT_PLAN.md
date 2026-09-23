@@ -181,10 +181,11 @@ and the costs are measured rather than hypothetical:
   pin and no warning. It is not yet on `master`, so nothing is broken today; it
   will be the moment the Phase 11 branch merges.
 
-The end state is two sibling repositories. The private one installs `quant-core`
-pinned to a tag, registers its strategies and commands through entry points, and
-runs the platform's dashboard and CLI from its own environment. Neither repository
-contains the other.
+The end state inverts the containment. The private repository contains this one
+as a submodule pinned to a release, installs `quant-core` from it, registers its
+strategies and commands through entry points, and runs the platform's dashboard
+and CLI from its own environment. This repository contains, imports, builds and
+names nothing of the private one.
 
 54. [completed] Tag `v0.1.0` at `ed9b804`, the tip of `master` before Phase 11, so the
    private repository has a version to pin while it migrates.

@@ -90,19 +90,34 @@ this is the test that tells you before anything trades.
 
 ## Working on the platform and a strategy together
 
-Keep the two repositories as siblings:
+Two layouts work. Either way, your package depends on quant-core and never the
+other way round.
 
-```
-code/
-├── quant_core/
-└── my_strategies/
-```
+**quant-core inside your repository, as a submodule.** The submodule's commit is
+the pin, and editing the platform takes effect at once:
 
-Point your package at the local checkout while you work:
+```bash
+git submodule add https://github.com/kyleyhw/quant_core quant_core
+git -C quant_core checkout v0.2.1
+```
 
 ```toml
 [tool.uv.sources]
-quant-core = { path = "../quant_core", editable = true }
+quant-core = { path = "quant_core", editable = true }
+```
+
+CI needs `submodules: true` on its checkout step. Commit platform changes inside
+the submodule and send them to quant-core as a pull request; move the submodule
+to the new release once it is tagged.
+
+**The two repositories side by side.** Pin a tag, and point at a local checkout
+only while you work on both:
+
+```toml
+[tool.uv.sources]
+quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.2.1" }
+# while working on both:
+# quant-core = { path = "../quant_core", editable = true }
 ```
 
 Switch back to the tag before committing, so CI and everyone else build against
