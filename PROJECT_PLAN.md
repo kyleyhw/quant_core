@@ -186,10 +186,10 @@ pinned to a tag, registers its strategies and commands through entry points, and
 runs the platform's dashboard and CLI from its own environment. Neither repository
 contains the other.
 
-54. [pending] Tag `v0.1.0` at `ed9b804`, the tip of `master` before Phase 11, so the
+54. [completed] Tag `v0.1.0` at `ed9b804`, the tip of `master` before Phase 11, so the
    private repository has a version to pin while it migrates.
    Cloud sessions cannot push tags, so tagging moved into GitHub Actions: the
-   release workflow backfills this one when dispatched with `ref: ed9b804`.
+   release workflow backfilled this one when dispatched with `ref: ed9b804`.
 55. [completed] Move the code under a `quant_core` namespace in the `src/` layout.
    Today the project installs top-level packages named `src`, `strategies` and
    `run_backtesting`, which will collide with other packages once `quant-core` is
@@ -225,15 +225,17 @@ contains the other.
    which is a separate decision and is not planned.
 61. [completed] Drop the deprecated `CustomBacktest` alias, so every breaking change the
    private repository has to absorb lands in one release rather than several.
-62. [pending] Start `CHANGELOG.md` and release `v0.2.0`: the Phase 11 base-class
+62. [completed] Start `CHANGELOG.md` and release `v0.2.0`: the Phase 11 base-class
    contract, the namespace move, entry-point discovery and the alias removal, each
    with a migration note giving old and new import paths. Before 1.0, a minor
    version bump is how a breaking change is signalled; the deprecation policy for
    1.0 and later is Phase 21.
    `CHANGELOG.md` is written, with migration notes for every symbol a
-   downstream package imports; version is 0.2.0. The release workflow tags
-   the merge commit automatically when this lands on `master`.
-63. [pending] **Migrate the private repository onto `v0.2.0`. Blocking for private
+   downstream package imports. The release workflow tagged `v0.2.0` on the
+   merge commit. `v0.2.1` followed: the conformance probe measured a short
+   trade's stop distance with the wrong sign, which the private strategies were
+   the first to exercise.
+63. [completed] **Migrate the private repository onto `v0.2.0`. Blocking for private
    work.** Done in the private repository, not here. It depends on `quant-core` by
    tag instead of living inside it; becomes an installable package; migrates every
    `BaseStrategy` subclass to `on_bar()`; registers its strategies and the training
@@ -244,6 +246,13 @@ contains the other.
    sizing, so its numbers will move. A strategy that genuinely wants the old
    all-in, no-stop behaviour sets `stop_loss_pct = 0` and `take_profit_pct = 0`
    explicitly. Until the migration lands, private work stays pinned to `v0.1.0`.
+   Done: the private repository is its own package pinned to `v0.2.1`, with its
+   shared dependencies pinned to this repository's lockfile so numbers move only
+   when a strategy or the platform does. Measured on the same data before and
+   after, its results moved as predicted. One trap for any downstream package:
+   a strategy tuned against the old units sets `stop_loss_pct` to an ATR multiple
+   above 1, which on 0.2 disables the trailing stop and shrinks the position
+   towards zero. A follow-up here should warn when `stop_loss_pct >= 1`.
 64. [completed] Document the two-repository development loop: an editable path source
    under `[tool.uv.sources]` for changing the platform and a private strategy
    together, and the tag pin for everything else.
