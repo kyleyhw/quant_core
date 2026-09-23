@@ -21,7 +21,7 @@ from pathlib import Path
 # it there via the pythonpath setting in pyproject.toml.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from testing.conftest import synthetic_ohlcv
+from quant_core.testing import synthetic_ohlcv
 from testing.regression_runs import RUNS, run_one
 
 BASELINE = Path(__file__).parent / "baselines" / "backtest_metrics.json"
