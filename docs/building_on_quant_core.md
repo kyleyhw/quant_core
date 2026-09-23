@@ -15,7 +15,7 @@ name = "my-strategies"
 dependencies = ["quant-core"]
 
 [tool.uv.sources]
-quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.2.0" }
+quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.2.1" }
 ```
 
 Pin a tag, never a branch. Breaking changes and their migration notes are listed

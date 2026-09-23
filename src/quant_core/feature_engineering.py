@@ -92,7 +92,8 @@ class FeatureEngineer:
         # skip it or use a rolling VWAP approximation:
         # df['VWAP'] = ta.vwap(df['high'], df['low'], df['close'], df['volume'])
 
-        # Reorder columns to match the trained XGBoost models' feature order.
+        # A fixed column order, so a trained model sees features in the order it
+        # was trained on.
         expected_order = [
             "close",
             "high",
