@@ -74,6 +74,17 @@ Phases 1-10 above are the historical record and keep their original numbering.
 From here the phase number **is** the build order. Phases 8 and 9 remain open and
 are carried forward into Phases 22 and 23.
 
+**Audited 2026-09-23**, after Phase 11 landed. The audit changed three things.
+Phase 11 gained follow-ups, one of which is blocking for the private submodule.
+Phase 14 now opens with engine invariant tests, because Phase 11 found a
+double-charged commission that a ten-line invariant would have caught in
+seconds. And a new Phase 25 makes the core callable over HTTP, so the dashboard
+becomes one client among several rather than the only way in. Phase 11 also
+established that no public strategy has an edge once its declared risk
+parameters actually apply, which is why Phases 15 and 23 read more urgently than
+they did a week ago; they stay where they are because the dashboard was asked for
+first, and the finding is recorded in each.
+
 ## Phase 11: Engine Correctness (blocking)
 Bugs found by reading the code against the documentation. Every benchmark report
 currently in `strategies/reports/` was produced under these and is not
@@ -124,128 +135,198 @@ CI so they cannot regress while the dashboard work is underway.
    it declares no risk parameters. The reported edge of the public strategies was
    largely an artifact of trading the full book with a stop that never fired.
 
+**Follow-ups found in the 2026-09-23 audit.** The phase is complete, but it left
+three things behind that belong to it.
+
+53. [pending] **Migrate the private strategies submodule to `on_bar()`. Blocking for
+   private mode.** `BaseStrategy` now raises `TypeError` at import time for any
+   subclass that defines `next()`. `run_backtesting/benchmark.py` configures
+   `DynamicSizingStrategy`, `MetaRegimeFilterStrategy`, `EnsembleSignalStrategy`
+   and `MLRegimeStrategy` from `strategies_private`; any of them that overrides
+   `next()` will fail to import, which breaks the private dashboard mode and the
+   private benchmark. The submodule is a separate repository, so this cannot be
+   done from here. Until it lands, pin the submodule to a commit that predates the
+   Phase 11 base-class change, or expect private mode to fail loudly.
+54. [pending] Update `docs/strategy_development.md`, which still tells strategy
+   authors to call `super().next()` and describes the take-profit logic that was a
+   `pass`. The example in `docs/feature_engineering.md` also shows `next()`.
+55. [pending] The benchmark report's "Strategy Summary" table is hardcoded in
+   `benchmark.py` and lists strategies that did not run. Generate it from the runs
+   that actually completed.
+
 ## Phase 12: Dashboard Rebuild
 Supersedes the Streamlit dashboard delivered in Phase 10. Direction: the "Ledger
 surface, Desk structure" merge from the design canvas
 (https://claude.ai/artifact/29p1Qjgebz9qRHS8f3nnhb). Pulled ahead of the deeper
 engine work so progress is visible early.
 
-53. [pending] Establish the design system: colour tokens, type scale, and the
+56. [pending] Decide the UI stack and write the decision down. Recommendation:
+   stay on Streamlit for this phase. It gets the design on screen fastest, which
+   is what this phase is for, and it will fight the design in exactly three
+   places: the persistent nav rail, tab state across reruns, and the slide-over
+   drawer. Accept those, and put every engine call behind the next item so that
+   the frontend can be replaced in Phase 25 without touching the engine.
+57. [pending] A service module, `src/service/`, that the dashboard, the CLI and the
+   benchmark all call for the same things: run a backtest, list strategies and
+   their parameters, load data, read and write the run store. Plain Python, no
+   HTTP. This is the seam Phase 25 wraps in an API, and it is the reason
+   `run_backtest.py` and `benchmark.py` can stop carrying two copies of strategy
+   discovery, data loading and report writing.
+58. [pending] Establish the design system: colour tokens, type scale, and the
    Spectral / IBM Plex Sans / IBM Plex Mono stack, injected as CSS.
-54. [pending] Build the application shell: nav rail, masthead, specification strip,
+59. [pending] Build the application shell: nav rail, masthead, specification strip,
    tab bar.
-55. [pending] Build the run configuration drawer. Must expose strategy parameters,
+60. [pending] Build the run configuration drawer. Must expose strategy parameters,
    universe, period, data source, capital, commission, and the three
    `base_strategy` risk parameters, which the current UI does not surface at all.
-56. [pending] Add a run history store so runs persist and can be reloaded and
+61. [pending] Add a run history store so runs persist and can be reloaded and
    compared. Today each run overwrites the last.
-57. [pending] Replace the embedded `backtesting.py` Bokeh HTML with native equity and
+62. [pending] Replace the embedded `backtesting.py` Bokeh HTML with native equity and
    drawdown charts sharing one x axis.
-58. [pending] Overview tab: six headline figures plus a plain-language reading of the
+63. [pending] Overview tab: six headline figures plus a plain-language reading of the
    result.
-59. [pending] Trades tab.
-60. [pending] Metrics tab, grouped into Returns, Risk, Trade Quality, and Run Details
+64. [pending] Trades tab.
+65. [pending] Metrics tab, grouped into Returns, Risk, Trade Quality, and Run Details
    instead of the current unsorted stats dump.
-61. [pending] Execution log tab, surfacing `ExecutionManager` blocks and `Notifier`
+66. [pending] Execution log tab, surfacing `ExecutionManager` blocks and `Notifier`
    events, which are invisible in the UI today.
-62. [pending] Benchmark screen: strategy matrix, return-against-drawdown scatter, and
+67. [pending] Benchmark screen: strategy matrix, return-against-drawdown scatter, and
    overlaid equity curves. `run_backtesting/benchmark.py` currently has no UI.
-63. [pending] Reports screen for browsing and exporting `strategies/reports/`.
-64. [pending] Paper trading monitor screen. Ships disabled until Phase 17 and 18.
-65. [pending] Tests for dashboard helpers and a smoke test that the app renders.
+68. [pending] Reports screen for browsing and exporting `strategies/reports/`.
+69. [pending] Paper trading monitor screen. Ships disabled until Phase 17 and 18.
+70. [pending] Tests for dashboard helpers and a smoke test that the app renders.
 
 ## Phase 13: Dashboard Experience
-66. [pending] Persist the last configuration between sessions. Strategy, asset,
+71. [pending] Persist the last configuration between sessions. Strategy, asset,
    dates, and commission all reset on every rerun today.
-67. [pending] Write a reproducibility manifest per run: data hash, strategy hash,
+72. [pending] Write a reproducibility manifest per run: data hash, strategy hash,
    parameters, library versions, so any saved report can be regenerated.
-68. [pending] Surface real errors. The traceback is commented out in `dashboard/app.py`
+73. [pending] Surface real errors. The traceback is commented out in `dashboard/app.py`
    and failures show as a single line.
-69. [pending] Validate configuration before running, rather than failing after the
+74. [pending] Validate configuration before running, rather than failing after the
    button is pressed. A pairs strategy with one asset selected is the current
    example.
-70. [pending] Progress reporting and cancellation for long runs.
-71. [pending] Named runs with tags and free-text notes.
-72. [pending] Shareable deep links to a specific run.
-73. [pending] Side-by-side run comparison with metric deltas.
-74. [pending] Inline metric definitions drawn from `docs/interpreting_report.md`.
-75. [pending] Annotate the equity curve with trade markers and regime shading.
-76. [pending] Export a run as PDF, Markdown, CSV, or a runnable notebook.
-77. [pending] Theme toggle, with the dark "Tape" direction from the design canvas as
+75. [pending] Progress reporting and cancellation for long runs.
+76. [pending] Named runs with tags and free-text notes.
+77. [pending] Shareable deep links to a specific run.
+78. [pending] Side-by-side run comparison with metric deltas.
+79. [pending] Inline metric definitions drawn from `docs/interpreting_report.md`.
+80. [pending] Annotate the equity curve with trade markers and regime shading.
+81. [pending] Export a run as PDF, Markdown, CSV, or a runnable notebook.
+82. [pending] Theme toggle, with the dark "Tape" direction from the design canvas as
    the alternate theme.
-78. [pending] First-run onboarding. The app currently downloads a hardcoded ticker
+83. [pending] First-run onboarding. The app currently downloads a hardcoded ticker
    list for a hardcoded date range with no explanation and no choice.
-79. [pending] Keyboard shortcuts for run, compare, and tab switching.
+84. [pending] Keyboard shortcuts for run, compare, and tab switching.
+85. [pending] Parameter sweep view: pick ranges, run the grid, see the sensitivity
+   surface. The front end for Phase 15's optimisation items.
+86. [pending] Strategy health view: for each strategy, rolling out-of-sample
+   performance on data that arrived after its last run. The front end for
+   Phase 15's decay item.
 
 ## Phase 14: Backtest Realism
 Nothing here changes whether a backtest is correct, only whether it is honest.
 Each item shifts reported returns downward, so expect the numbers on the new
-dashboard to get worse and truer.
+dashboard to get worse and truer. The phase opens with invariants because it is
+about to change the engine, and Phase 11 showed how quietly the engine can be
+wrong.
 
-80. [pending] Slippage model, configurable as fixed basis points or a fraction of
+87. [pending] Engine invariant tests, before touching anything else. Buy-and-hold at
+   zero cost equals the price return. Closed-trade P&L plus open P&L equals the
+   change in equity. Commission drag equals rate times notional per side. A
+   decision on bar N is unchanged when every bar after N is replaced. The
+   double-charged commission Phase 11 found would have failed the third of these
+   on the first run.
+88. [pending] Differential test against an independent engine, either vectorbt or a
+   hand-rolled vectorised replay, for the moving-average crossover on the test
+   fixture. Two engines agreeing is the strongest evidence this project can have
+   that its numbers mean what they say.
+89. [pending] Slippage model, configurable as fixed basis points or a fraction of
    the bar range. Nothing models it today; market orders fill exactly at the next
    open.
-81. [pending] Bid-ask spread. `CustomBacktest` passes `spread=0`; the engine
-   supports the parameter.
-82. [pending] Set `finalize_trades=True`. A position still open on the final bar is
-   currently dropped from returns and trade statistics.
-83. [pending] Liquidity ceiling: cap order size at a fraction of the bar's volume so
+90. [pending] Bid-ask spread. The engine supports the parameter and nothing passes
+   it.
+91. [pending] Set `finalize_trades=True`. A position still open on the final bar is
+   currently dropped from returns and trade statistics. The regenerated benchmark
+   still warns about this on every run.
+92. [pending] Liquidity ceiling: cap order size at a fraction of the bar's volume so
    a strategy cannot buy more than the market traded.
-84. [pending] Exclude the warm-up window from results. The ATR calculation
+93. [pending] Exclude the warm-up window from results. The ATR calculation
    back-fills its first hundred bars, so early trades use a value that was not
    observable at the time.
-85. [pending] State `auto_adjust` explicitly in the downloader. `yf.download` is
+94. [pending] State `auto_adjust` explicitly in the downloader. `yf.download` is
    called without it, so whether prices are split and dividend adjusted depends on
    the installed library version.
-86. [pending] Model borrow cost and short availability for short positions.
-87. [pending] Model overnight financing on margin.
-88. [pending] Build a survivorship-free universe, or state the bias plainly in every
-   report. The benchmark universe is six large caps that all still exist.
+95. [pending] Model borrow cost and short availability for short positions.
+96. [pending] Model overnight financing on margin.
+97. [pending] Build a survivorship-free universe, or state the bias plainly in every
+   report. The benchmark universe is ten large caps that all still exist.
+98. [pending] Multi-timeframe data alignment, so a daily strategy can consult hourly
+   bars without look-ahead. Phase 20 builds the strategy pattern on top of it.
 
 ## Phase 15: Statistical Validation
 The engine can already produce a number. This phase is about knowing whether to
-believe it. Each item has a natural home on the dashboard built in Phase 12.
+believe it. Phase 11 showed that the reported edge of every public strategy was
+an artefact of a stop that never fired; this phase is how the project avoids
+being fooled a second time. Each item has a natural home on the dashboard built
+in Phase 12.
 
-89. [pending] Walk-forward analysis harness: rolling train and test windows with
+99. [pending] Walk-forward analysis harness: rolling train and test windows with
    out-of-sample stitching.
-90. [pending] Parameter optimisation. `backtesting.py` ships an `optimize` method
+100. [pending] Parameter optimisation. `backtesting.py` ships an `optimize` method
    that nothing in the repo calls.
-91. [pending] Parameter sensitivity surfaces, so a result that only works at one
+101. [pending] Parameter sensitivity surfaces, so a result that only works at one
    setting is visible as a spike rather than a plateau.
-92. [pending] Purged, embargoed k-fold cross-validation for the machine learning
+102. [pending] Purged, embargoed k-fold cross-validation for the machine learning
    strategies. Nothing currently enforces a train and test split.
-93. [pending] Monte Carlo trade resampling to put confidence intervals on Sharpe,
+103. [pending] Monte Carlo trade resampling to put confidence intervals on Sharpe,
    drawdown, and terminal equity.
-94. [pending] Deflated Sharpe ratio and probability of backtest overfitting, to
+104. [pending] Deflated Sharpe ratio and probability of backtest overfitting, to
    discount results for the number of configurations tried.
-95. [pending] Bootstrap confidence bands on the equity curve.
-96. [pending] Benchmark-relative statistics: alpha, beta, information ratio,
+105. [pending] Bootstrap confidence bands on the equity curve.
+106. [pending] Benchmark-relative statistics: alpha, beta, information ratio,
    tracking error, up and down capture.
-97. [pending] Performance attribution by regime, calendar month, weekday, and
+107. [pending] Performance attribution by regime, calendar month, weekday, and
    holding-period bucket.
+108. [pending] A significance test for "strategy A beats strategy B": bootstrap the
+   difference in Sharpe over paired windows. The benchmark table currently invites
+   ranking by a single point estimate, which is how a 97% return on AMD looked
+   like a result.
+109. [pending] Strategy decay monitoring: re-run every strategy on each new week of
+   data and track out-of-sample performance against its in-sample expectation.
+110. [pending] Minimum track-record length: for a Sharpe of this size, how many years
+   of data before it is distinguishable from zero. Print it next to the Sharpe.
 
 ## Phase 16: Test Coverage
 Phase 11 built the harness and pinned the critical behaviour. This widens it.
 
-98. [pending] Unit tests for strategies, feature engineering, commission models, and
+111. [pending] Unit tests for strategies, feature engineering, commission models, and
    the data loader.
-99. [pending] Property-based tests for `ExecutionManager` using `hypothesis`, already
+112. [pending] Property-based tests for `ExecutionManager` using `hypothesis`, already
    a dev dependency but unused.
-100. [pending] Coverage reporting with a floor enforced in CI.
-101. [pending] Fold `testing/debug_scripts/` into the test suite or delete it.
+113. [pending] Tests for the `qc` command-line entry points.
+114. [pending] Make `ty` blocking in CI. It is advisory today because of thirty
+   pre-existing diagnostics in the dashboard and the IBKR adapter; Phase 28 clears
+   them.
+115. [pending] Coverage reporting with a floor enforced in CI.
+116. [pending] Fold `testing/debug_scripts/` into the test suite or delete it. It is
+   excluded from collection today because its scripts need the network.
 
 ## Phase 17: Account-Level Risk Controls
 The limits in `src/execution.py` are per-order only. A per-order cap cannot stop a
 slow bleed across many orders. Must land before any live order is sent.
 
-102. [pending] Daily loss limit, measured against a configurable reset time, counting
+117. [pending] Daily loss limit, measured against a configurable reset time, counting
    open position P&L.
-103. [pending] Total drawdown limit against a persisted high-water mark.
-104. [pending] Auto-flatten and halt on breach.
-105. [pending] Kill switch reachable from both the dashboard and the CLI.
-106. [pending] Persist risk state across restarts so a limit survives a crash.
-107. [pending] Move hard limits out of class attributes into configuration.
-108. [pending] Pre-trade risk check combining order limits, account limits, and
+118. [pending] Total drawdown limit against a persisted high-water mark.
+119. [pending] Auto-flatten and halt on breach.
+120. [pending] Kill switch reachable from both the dashboard and the CLI.
+121. [pending] Persist risk state across restarts so a limit survives a crash.
+122. [pending] A typed, validated settings object for every runtime setting: order
+   and account limits, connection details, notification channels, data paths.
+   Hard-coded class attributes and loose `.env` reads both go, and a bad value
+   fails at startup rather than at the first order.
+123. [pending] Pre-trade risk check combining order limits, account limits, and
    portfolio concentration in one gate.
 
 ## Phase 18: Paper Trading & Live Execution
@@ -253,143 +334,210 @@ Carried forward from the original Phase 11. Gated on Phases 11 and 17: do not
 paper trade a strategy whose backtest is known to be wrong, or without
 account-level loss limits.
 
-109. [pending] Route every live order through `ExecutionManager.check_order_limits`.
+124. [pending] Route every live order through `ExecutionManager.check_order_limits`.
    `BaseStrategy.buy_instrument` / `sell_instrument` currently call the adapter
    directly, so the documented "fat finger" gate is not in the live path.
-110. [pending] Implement streaming bar subscription in the IBKR data loader.
+125. [pending] Implement streaming bar subscription in the IBKR data loader.
    `IBKRDataLoader` only implements `get_historical_data`; nothing feeds a strategy
    in real time.
-111. [pending] Build the live runner: an event-driven entry point that advances a
-   strategy per bar. `BaseStrategy.next` is backtest-only today.
-112. [pending] Track order lifecycle through `ib_insync` callbacks (fills, partial
+126. [pending] Build the live runner: an event-driven entry point that advances a
+   strategy per bar. `on_bar()` is called only by the backtest engine today.
+127. [pending] Track order lifecycle through `ib_insync` callbacks (fills, partial
    fills, rejections). `get_order_status` reads a snapshot once.
-113. [pending] Reconcile state against IBKR positions on startup, as described in
+128. [pending] Reconcile state against IBKR positions on startup, as described in
    `docs/safety_and_recovery.md`. No code implements this yet.
-114. [pending] Enable the paper trading monitor screen built in Phase 12.
-115. [pending] Conduct a dry run against live market data with execution disabled.
-116. [pending] Begin paper trading with a small capital allocation.
+129. [pending] Enable the paper trading monitor screen built in Phase 12.
+130. [pending] Conduct a dry run against live market data with execution disabled.
+131. [pending] Begin paper trading with a small capital allocation.
+132. [pending] Shadow reconciliation: replay each day's live bars through the backtest
+   engine and diff the simulated fills against the real ones. The gap is
+   implementation shortfall, and it is the one number that says whether
+   Phase 14's cost models are honest.
+133. [pending] A scheduled daily run that writes the day's signals, fills and P&L as
+   a report, so paper trading leaves an audit trail whether or not anyone was
+   watching.
 
 ## Phase 19: Live Execution Hardening
-117. [pending] A simulated broker adapter implementing `IMarketAdapter`, so the live
+134. [pending] A simulated broker adapter implementing `IMarketAdapter`, so the live
    path can be tested end to end without IBKR running.
-118. [pending] Bracket orders and native IBKR trailing stops, so protection survives a
+135. [pending] Bracket orders and native IBKR trailing stops, so protection survives a
    process crash.
-119. [pending] Partial fill handling and order amendment.
-120. [pending] Reconnect with exponential backoff and session resumption.
-121. [pending] Idempotent order submission, so a restart mid-send cannot double-fill.
-122. [pending] Clock and timezone discipline, including market calendar and half days.
-123. [pending] A second market adapter to prove the abstraction, which the README
-   claims but has never been exercised.
+136. [pending] Partial fill handling and order amendment.
+137. [pending] Reconnect with exponential backoff and session resumption.
+138. [pending] Idempotent order submission, so a restart mid-send cannot double-fill.
+139. [pending] Clock and timezone discipline, including market calendar and half days.
+140. [pending] A second market adapter to prove the abstraction, which the README
+   claims but has never been exercised. Recommendation: crypto through `ccxt`. It
+   trades around the clock, the data is free, and a venue with no market hours,
+   no share lots and no tiered commissions stresses every assumption the IBKR
+   adapter baked into `src/interfaces.py`.
+141. [pending] Transaction cost analysis: expected fill against realised fill for
+   every live order, aggregated by symbol and order type.
+142. [pending] Feed measured costs back into the Phase 14 slippage and commission
+   models, so the backtest's cost assumptions are calibrated from fills rather
+   than guessed.
 
 ## Phase 20: Strategy Framework
-124. [pending] Strategy registry with declared metadata: asset class, required
+143. [pending] Strategy registry with declared metadata: asset class, required
    lookback, supported timeframes, author, version.
-125. [pending] Parameter schema on each strategy, so the dashboard can generate its
+144. [pending] Parameter schema on each strategy, so the dashboard can generate its
    controls instead of hardcoding them. `get_params` is a start but is
    return-only.
-126. [pending] Content-hash each strategy and record the hash on every run, so a
+145. [pending] Content-hash each strategy and record the hash on every run, so a
    result can always be traced to the exact code that produced it.
-127. [pending] First-class meta-strategies. `_default_buy` already refers to a
-   `DynamicSizingStrategy` that does not exist in the public tree.
-128. [pending] Replace per-bar `numpy` recomputation with the engine's indicator API.
+146. [pending] First-class meta-strategies. `_default_buy` already refers to a
+   `DynamicSizingStrategy` that lives only in the private tree.
+147. [pending] Replace per-bar `numpy` recomputation with the engine's indicator API.
    `SimpleMACrossover` recomputes both moving averages from scratch on every bar,
    which is quadratic and leaves nothing to plot.
-129. [pending] Strategy scaffolding command that generates a new strategy, its tests,
+148. [pending] Multi-timeframe strategies as a supported pattern, on the alignment
+   built in Phase 14.
+149. [pending] Regime detection as a public, shared feature any strategy can read,
+   rather than something each private strategy reimplements.
+150. [pending] Retire the dashboard's `create_signal_executor` wrapper or make it
+   real. No strategy returns a signal, so it is dead code.
+151. [pending] Strategy scaffolding command that generates a new strategy, its tests,
    and its docs entry.
-130. [pending] An event-driven backtest engine as an alternative to `backtesting.py`,
+152. [pending] An event-driven backtest engine as an alternative to `backtesting.py`,
    which is single-asset and assumes bar data.
 
 ## Phase 21: Portfolio & Multi-Asset
 The framework backtests one symbol at a time. Portfolio behaviour is where most
 real risk lives.
 
-131. [pending] Multi-asset portfolio backtest with a shared cash account.
-132. [pending] Separate signal generation from position sizing: strategies emit
+153. [pending] Multi-asset portfolio backtest with a shared cash account.
+154. [pending] Separate signal generation from position sizing: strategies emit
    target weights, a sizer turns weights into orders.
-133. [pending] Portfolio construction methods: equal weight, volatility targeting,
+155. [pending] Portfolio construction methods: equal weight, volatility targeting,
    risk parity, and Kelly-fraction sizing.
-134. [pending] Strategy ensembles with capital allocated across several strategies.
-135. [pending] Rebalancing schedules with turnover and cost accounting.
-136. [pending] Correlation matrix and portfolio-level drawdown reporting.
-137. [pending] Exposure reporting by sector and by factor.
-138. [pending] Portfolio-level risk limits: gross and net exposure, per-symbol
+156. [pending] Strategy ensembles with capital allocated across several strategies.
+157. [pending] Rebalancing schedules with turnover and cost accounting.
+158. [pending] Correlation matrix and portfolio-level drawdown reporting.
+159. [pending] Exposure reporting by sector and by factor.
+160. [pending] Portfolio-level risk limits: gross and net exposure, per-symbol
    concentration, per-sector concentration.
+161. [pending] Realised and unrealised P&L with lot-level accounting, first in first
+   out, which is what a broker statement and a tax return both expect.
+162. [pending] Multi-currency support: positions in non-USD instruments, with FX
+   conversion for equity and for every risk limit.
 
 ## Phase 22: Data Platform
 Absorbs the data half of the original Phase 9.
 
-139. [pending] Add data providers behind the existing `IDataLoader` interface, so
+163. [pending] Add data providers behind the existing `IDataLoader` interface, so
    yfinance is not the only source.
-140. [pending] Intraday bar handling at one and five minute resolution. Original
+164. [pending] Intraday bar handling at one and five minute resolution. Original
    Phase 9, item 36.
-141. [pending] Data quality checks: index gaps, duplicate timestamps, zero-volume
+165. [pending] Data quality checks: index gaps, duplicate timestamps, zero-volume
    bars, price outliers, timezone consistency. Fail loudly rather than backtest on
    bad data.
-142. [pending] Explicit corporate action handling, independent of provider defaults.
-143. [pending] Point-in-time universe membership, so a backtest sees the index as it
+166. [pending] Explicit corporate action handling, independent of provider defaults.
+167. [pending] Point-in-time universe membership, so a backtest sees the index as it
    was, not as it is.
-144. [pending] Incremental cache updates instead of re-downloading whole histories.
-145. [pending] Store cached data as Parquet rather than CSV.
-146. [pending] A data catalogue screen showing what is cached, its date range,
+168. [pending] Universe screening: choose symbols by liquidity, volatility and price
+   floor rather than from a hardcoded list.
+169. [pending] Incremental cache updates instead of re-downloading whole histories.
+170. [pending] Scheduled refresh of cached data, so the catalogue is never stale by
+   accident.
+171. [pending] Store cached data as Parquet rather than CSV.
+172. [pending] A data catalogue screen showing what is cached, its date range,
    quality flags, and freshness.
-147. [pending] Record a content hash of the input data on every run.
+173. [pending] Record a content hash of the input data on every run.
+174. [pending] A plain note on data licensing. yfinance scrapes Yahoo and automated
+   use sits outside its terms; say so in the docs and name the provider to move
+   to before anything trades real money.
 
 ## Phase 23: Strategy Research
-Absorbs the original Phase 8 and the strategy half of the original Phase 9. Placed
-here because research is only worth doing once results can be trusted (Phase 11),
-measured (Phase 15), and viewed (Phase 12).
+Absorbs the original Phase 8 and the strategy half of the original Phase 9.
+Phase 11 established that no public strategy has an edge once its own risk
+parameters apply, so research starts from zero rather than from a portfolio of
+working strategies. Placed here because research is only worth doing once
+results can be trusted (Phase 11), measured (Phase 15), and viewed (Phase 12).
 
-148. [pending] Brainstorm new strategy concepts: sentiment analysis, statistical
+175. [pending] An edge audit of every existing strategy, public and private, under
+   the Phase 14 costs and the Phase 15 statistics. Retire what fails. Only what
+   survives earns screen space on the dashboard.
+176. [pending] A research notebook workflow: a template that loads the fixture, runs
+   a strategy through the service module, and renders the Phase 15 statistics, so
+   an idea can be tried and judged in an hour.
+177. [pending] Brainstorm new strategy concepts: sentiment analysis, statistical
    arbitrage, reinforcement learning. Original Phase 8, item 32.
-149. [pending] Select candidates for implementation. Original Phase 8, item 33.
-150. [pending] Backtest and validate them under the Phase 15 harness. Original
+178. [pending] Select candidates for implementation. Original Phase 8, item 33.
+179. [pending] Backtest and validate them under the Phase 15 harness. Original
    Phase 8, item 34.
-151. [pending] Intraday logic research: VWAP and order flow imbalance. Original
+180. [pending] Intraday logic research: VWAP and order flow imbalance. Original
    Phase 9, item 35.
-152. [pending] Develop an intraday strategy such as gap-and-go or mean reversion.
+181. [pending] Develop an intraday strategy such as gap-and-go or mean reversion.
    Original Phase 9, item 37.
 
 ## Phase 24: Machine Learning Lifecycle
-153. [pending] A test that asserts training and inference produce identical features.
+182. [pending] A test that asserts training and inference produce identical features.
    `README.md` calls this critical; nothing enforces it.
-154. [pending] Feature store with point-in-time correctness.
-155. [pending] Model registry recording training data range, hyperparameters, metrics,
+183. [pending] Feature store with point-in-time correctness.
+184. [pending] Model registry recording training data range, hyperparameters, metrics,
    and the code hash.
-156. [pending] Drift monitoring on live feature distributions against training.
-157. [pending] Explainability reporting for the regime model.
-158. [pending] Automated retraining schedule with promotion gates.
+185. [pending] Drift monitoring on live feature distributions against training.
+186. [pending] Explainability reporting for the regime model.
+187. [pending] Automated retraining schedule with promotion gates, using the purged
+   cross-validation from Phase 15 as the gate.
 
-## Phase 25: Operational Readiness
+## Phase 25: Service Layer & API
+Phase 12's service module made the core callable from Python. This makes it
+callable from anywhere. The dashboard becomes one client among several and can be
+replaced without touching the engine, and a phone can reach the kill switch.
+
+188. [pending] An HTTP API over the service module: runs, strategies, the data
+   catalogue, risk state, live status, and the kill switch.
+189. [pending] Authentication. It will expose live positions.
+190. [pending] Move the dashboard and the CLI onto the API, so there is one path into
+   the engine.
+191. [pending] A minimal status page that works on a phone: equity, open positions,
+   the last few events, the kill switch. The page to open when an alert fires.
+192. [pending] Decide whether the Streamlit dashboard stays or is replaced by a
+   frontend built against the API, with the Phase 12 design canvas as the
+   specification. The three places Streamlit fought the design in Phase 12 are
+   the evidence for this decision.
+
+## Phase 26: Operational Readiness
 Run continuously alongside the phases above rather than as a block.
 
-159. [pending] Structured logging to `logs/` with rotation.
-160. [pending] External heartbeat / dead man's switch for the supervisor. Carried over
+193. [pending] Structured logging to `logs/` with rotation.
+194. [pending] External heartbeat / dead man's switch for the supervisor. Carried over
    from Phase 6, item 28.
-161. [pending] Telegram notifier. `docs/safety_and_recovery.md` promises
+195. [pending] Telegram notifier. `docs/safety_and_recovery.md` promises
    "Discord/Telegram" but `src/notifications.py` implements Discord only.
-162. [pending] Daily summary notification at market close.
-163. [pending] Alert routing rules by severity and channel.
-164. [pending] Health endpoint exposing connection state, last bar time, and open
+196. [pending] Daily summary notification at market close.
+197. [pending] Alert routing rules by severity and channel.
+198. [pending] Health endpoint exposing connection state, last bar time, and open
    position count.
-165. [pending] Move run storage to SQLite once the file-based store strains.
-166. [pending] Deployment and operations runbook.
+199. [pending] A scheduler for the recurring jobs this plan has accumulated: data
+   refresh (Phase 22), the daily paper run (Phase 18), the decay check
+   (Phase 15), retraining (Phase 24). One place to define them, one log to read.
+200. [pending] A nightly benchmark against the test fixture, checked against the
+   regression baseline, so an engine regression surfaces overnight rather than at
+   the next release.
+201. [pending] Move run storage to SQLite once the file-based store strains.
+202. [pending] Deployment and operations runbook.
 
-## Phase 26: Distribution & Documentation
-167. [pending] Docker image and a one-command local setup.
-168. [pending] Example notebook gallery.
-169. [pending] A public demo running on sample data with private strategies disabled.
-170. [pending] Document the market adapter plugin contract for third-party adapters.
-171. [pending] Published documentation site generated from `docs/`.
-172. [pending] Contribution guide and pull request template.
+## Phase 27: Distribution & Documentation
+203. [pending] Docker image and a one-command local setup.
+204. [pending] Example notebook gallery, seeded by the Phase 23 template.
+205. [pending] A public demo running on sample data with private strategies disabled.
+206. [pending] Document the market adapter plugin contract for third-party adapters.
+207. [pending] Published documentation site generated from `docs/`.
+208. [pending] Contribution guide and pull request template.
 
-## Phase 27: Housekeeping
+## Phase 28: Housekeeping
 Run continuously. None of these blocks anything.
 
-173. [pending] Implement or delete `src/metrics.py`, which is an empty file. It is the
+209. [pending] Deduplicate `run_backtesting/run_backtest.py` and `benchmark.py`, 845
+   lines between them sharing strategy discovery, data loading and report
+   writing, onto the Phase 12 service module.
+210. [pending] Reconcile the codebase with its own type annotations so `ty` can
+   become blocking in Phase 16.
+211. [pending] Implement or delete `src/metrics.py`, which is an empty file. It is the
    natural home for the Phase 15 statistics.
-174. [pending] Replace the `main.py` hello-world stub, or remove it in favour of the
+212. [pending] Replace the `main.py` hello-world stub, or remove it in favour of the
    `qc` console script.
-175. [pending] Reconcile documentation with behaviour, including the safety and
-   recovery doc's claims about reconciliation and notification channels, and the
-   moving average strategy's docstring claim that the parent class manages its
-   exits.
+213. [pending] Reconcile documentation with behaviour, including the safety and
+   recovery doc's claims about reconciliation and notification channels.
