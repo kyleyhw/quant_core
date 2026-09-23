@@ -83,6 +83,9 @@ should set `stop_loss_pct = 0` and `take_profit_pct = 0` explicitly.
   outside the source tree.
 - [Building on quant-core](docs/building_on_quant_core.md), a guide for
   downstream packages.
+- A release workflow. When a merge to `master` carries a version with no tag
+  yet, it tags that commit `v<version>` and publishes a GitHub release from this
+  changelog. It only creates tags, never moves or deletes them.
 
 ### Data
 

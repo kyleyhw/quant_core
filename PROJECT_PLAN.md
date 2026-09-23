@@ -188,8 +188,8 @@ contains the other.
 
 54. [pending] Tag `v0.1.0` at `ed9b804`, the tip of `master` before Phase 11, so the
    private repository has a version to pin while it migrates.
-   Blocked from this environment: its git proxy refuses tag pushes with a
-   403. To be created from a local checkout with the owner's credentials.
+   Cloud sessions cannot push tags, so tagging moved into GitHub Actions: the
+   release workflow backfills this one when dispatched with `ref: ed9b804`.
 55. [completed] Move the code under a `quant_core` namespace in the `src/` layout.
    Today the project installs top-level packages named `src`, `strategies` and
    `run_backtesting`, which will collide with other packages once `quant-core` is
@@ -231,8 +231,8 @@ contains the other.
    version bump is how a breaking change is signalled; the deprecation policy for
    1.0 and later is Phase 21.
    `CHANGELOG.md` is written, with migration notes for every symbol a
-   downstream package imports; version is 0.2.0. The tag is pending, for the
-   same reason as item 54, and goes on the merge commit.
+   downstream package imports; version is 0.2.0. The release workflow tags
+   the merge commit automatically when this lands on `master`.
 63. [pending] **Migrate the private repository onto `v0.2.0`. Blocking for private
    work.** Done in the private repository, not here. It depends on `quant-core` by
    tag instead of living inside it; becomes an installable package; migrates every
