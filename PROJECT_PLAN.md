@@ -138,7 +138,10 @@ CI so they cannot regress while the dashboard work is underway.
    guard on the division in `_adjusted_price`, but the class turned out to be
    obsolete and harmful: backtesting.py has supported callable commissions
    natively since 0.6, so the override charged commission twice (3.2 points of
-   return on an eleven-trade run), crashed with `TypeError: 'float' object is not
+   return on an eleven-trade run). The second charge was far larger than the
+   first for fractionally sized orders: it treated the equity fraction as a share
+   count and added about the whole minimum ticket fee to every share's price,
+   16 to 37 times the correct commission on a year of daily bars. It also crashed with `TypeError: 'float' object is not
    callable` for the three float models in `COMMISSION_MODELS`, and silently
    discarded `spread`. `CustomBacktest` survives as a deprecated alias for
    `backtesting.Backtest` so existing imports keep resolving.
