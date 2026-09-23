@@ -51,7 +51,7 @@ You can trigger these behaviors directly via the CLI:
 You can use the `SmartLoader` context manager in your own scripts to leverage this logic:
 
 ```python
-from src.data_loader import SmartLoader
+from quant_core.data_loader import SmartLoader
 
 # "NVDA" will be cleaned up on exit; "SPY" will be kept.
 with SmartLoader() as loader:

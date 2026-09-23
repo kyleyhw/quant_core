@@ -1,8 +1,8 @@
 # backtesting and reporting
 
-the `run_backtesting/` directory contains scripts for evaluating the performance of trading strategies using historical data. this process is crucial for understanding a strategy's potential viability before deploying it in a live market.
+the `quant_core.backtest` package contains scripts for evaluating the performance of trading strategies using historical data. this process is crucial for understanding a strategy's potential viability before deploying it in a live market.
 
-## backtesting a single strategy (`run_backtesting/run_backtest.py`)
+## backtesting a single strategy (`src/quant_core/backtest/run_backtest.py`)
 
 ### purpose
 the `run_backtest.py` script provides a "deep dive" into a single strategy's performance against a specific dataset. it is designed to be run from the command line and produces a detailed report and an interactive plot of the results.
