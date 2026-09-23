@@ -5,6 +5,11 @@ on:
     branches: ["**"]
   pull_request:
 
+# CI only reads the repository. The release workflow is the one place with
+# write access.
+permissions:
+  contents: read
+
 # A new push to the same branch makes the previous run irrelevant.
 concurrency:
   group: ci-${{ github.ref }}
