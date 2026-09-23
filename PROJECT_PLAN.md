@@ -162,7 +162,7 @@ hardcoded benchmark header both turned out to be symptoms of this repository
 containing the private one, so they moved to Phase 12, which fixes that. One
 remains here.
 
-53. [pending] Update `docs/strategy_development.md`, which still tells strategy
+53. [completed] Update `docs/strategy_development.md`, which still tells strategy
    authors to call `super().next()` and describes the take-profit logic that was a
    `pass`. The example in `docs/feature_engineering.md` also shows `next()`.
 
@@ -188,7 +188,9 @@ contains the other.
 
 54. [pending] Tag `v0.1.0` at `ed9b804`, the tip of `master` before Phase 11, so the
    private repository has a version to pin while it migrates.
-55. [pending] Move the code under a `quant_core` namespace in the `src/` layout.
+   Blocked from this environment: its git proxy refuses tag pushes with a
+   403. To be created from a local checkout with the owner's credentials.
+55. [completed] Move the code under a `quant_core` namespace in the `src/` layout.
    Today the project installs top-level packages named `src`, `strategies` and
    `run_backtesting`, which will collide with other packages once `quant-core` is
    somebody's dependency. The mapping: `src/*` becomes `quant_core.*`,
@@ -196,7 +198,7 @@ contains the other.
    `quant_core.backtest.*`, `dashboard/*` becomes `quant_core.dashboard.*`. One
    move, imports updated repository-wide, no compatibility shims: the only
    downstream consumer migrates in this same phase.
-56. [pending] Remove every reference to private code from public code, config and
+56. [completed] Remove every reference to private code from public code, config and
    docs: the module-level import in `src/cli.py`; `strategies_private*` in the build
    config; the private strategy configs and hardcoded "Strategy Summary" header in
    `benchmark.py` (previously a Phase 11 follow-up); private report routing in
@@ -204,30 +206,33 @@ contains the other.
    type-check and secrets-scan entries that name `strategies_private`; and the
    README's clone-with-submodules instructions, directory tree and Private Mode
    section.
-57. [pending] A CI guard that fails the build if `strategies_private` or
+57. [completed] A CI guard that fails the build if `strategies_private` or
    `quant_strategies` appears in any tracked file other than `CHANGELOG.md` and this
    plan, so the coupling cannot creep back.
-58. [pending] Strategy discovery through a `quant_core.strategies` entry-point group,
+58. [completed] Strategy discovery through a `quant_core.strategies` entry-point group,
    where each entry point resolves to a strategy class and its name is the display
    name. The benchmark, the backtest runner and the dashboard all list strategies
    from it, and the public reference strategies register through the same group,
    so both repositories share one discovery path.
-59. [pending] A `quant_core.commands` entry-point group, where each entry point
+59. [completed] A `quant_core.commands` entry-point group, where each entry point
    resolves to a function `register(subparsers)` that adds an `argparse`
    subcommand to `qc`. The model-training commands in `src/cli.py` train private
    models, so they move to the private repository and keep working as
    `qc train-regime` and `qc train-ensemble` from its environment.
-60. [pending] Remove the submodule: the `.gitmodules` entry and the gitlink. This
+60. [completed] Remove the submodule: the `.gitmodules` entry and the gitlink. This
    stops private activity being recorded in public history. Existing history is
    left as it is; scrubbing it means rewriting and force-pushing public history,
    which is a separate decision and is not planned.
-61. [pending] Drop the deprecated `CustomBacktest` alias, so every breaking change the
+61. [completed] Drop the deprecated `CustomBacktest` alias, so every breaking change the
    private repository has to absorb lands in one release rather than several.
 62. [pending] Start `CHANGELOG.md` and release `v0.2.0`: the Phase 11 base-class
    contract, the namespace move, entry-point discovery and the alias removal, each
    with a migration note giving old and new import paths. Before 1.0, a minor
    version bump is how a breaking change is signalled; the deprecation policy for
    1.0 and later is Phase 21.
+   `CHANGELOG.md` is written, with migration notes for every symbol a
+   downstream package imports; version is 0.2.0. The tag is pending, for the
+   same reason as item 54, and goes on the merge commit.
 63. [pending] **Migrate the private repository onto `v0.2.0`. Blocking for private
    work.** Done in the private repository, not here. It depends on `quant-core` by
    tag instead of living inside it; becomes an installable package; migrates every
@@ -239,10 +244,10 @@ contains the other.
    sizing, so its numbers will move. A strategy that genuinely wants the old
    all-in, no-stop behaviour sets `stop_loss_pct = 0` and `take_profit_pct = 0`
    explicitly. Until the migration lands, private work stays pinned to `v0.1.0`.
-64. [pending] Document the two-repository development loop: an editable path source
+64. [completed] Document the two-repository development loop: an editable path source
    under `[tool.uv.sources]` for changing the platform and a private strategy
    together, and the tag pin for everything else.
-65. [pending] Public CI proves the public repository stands alone: build the wheel,
+65. [completed] Public CI proves the public repository stands alone: build the wheel,
    install it into a clean environment with no private code anywhere, and run
    `qc --help`, the test suite, and the benchmark on the synthetic fixture.
 

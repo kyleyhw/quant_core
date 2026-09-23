@@ -67,7 +67,7 @@ This documentation provides a detailed overview of the framework and its IBKR im
 
 To understand the framework's performance, begin by examining the comprehensive multi-asset benchmark report. This report provides an overview of various strategies across multiple assets. For in-depth analysis and detailed performance metrics of individual strategies, refer to their respective reports.
 
-*   **Latest Public Benchmark Report:** [./reports/benchmark_report_multi_asset_20260921_062638.md](./reports/benchmark_report_multi_asset_20260921_062638.md)
+*   **Latest Public Benchmark Report:** [./reports/benchmark_report_multi_asset_20260923_102549.md](./reports/benchmark_report_multi_asset_20260923_102549.md)
 > **Numbers moved on 2026-09-21.** Reports generated before this date ran with a
 > trailing stop set roughly seventy times tighter than documented, with no stop at
 > all on two of the three public strategies, with no take-profit, and fully
