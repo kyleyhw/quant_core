@@ -11,10 +11,10 @@ This is the test that would have caught the three Phase 11 bugs:
 
 import pytest
 
-from strategies.base_strategy import BaseStrategy
-from strategies.bollinger_bands import BollingerBandsStrategy
-from strategies.rsi_2_period import RSI2PeriodStrategy
-from strategies.simple_ma_crossover import SimpleMACrossover
+from quant_core.strategies.base_strategy import BaseStrategy
+from quant_core.strategies.bollinger_bands import BollingerBandsStrategy
+from quant_core.strategies.rsi_2_period import RSI2PeriodStrategy
+from quant_core.strategies.simple_ma_crossover import SimpleMACrossover
 from testing.strategy_probe import CASH, probe
 
 # BuyAndHoldStrategy is deliberately excluded: it extends Strategy directly and

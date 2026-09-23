@@ -6,7 +6,7 @@ drawdown) are Phase 17 and are deliberately not covered here.
 
 import pytest
 
-from src.execution import ExecutionManager
+from quant_core.execution import ExecutionManager
 
 PRICE = 150.0
 SYMBOL = "AAPL"

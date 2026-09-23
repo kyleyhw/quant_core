@@ -16,8 +16,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from src.commission_models import ibkr_tiered_commission
-from strategies.base_strategy import BaseStrategy
+from quant_core.commission_models import ibkr_tiered_commission
+from quant_core.strategies.base_strategy import BaseStrategy
 
 
 # --- Signal Executor Wrapper ---

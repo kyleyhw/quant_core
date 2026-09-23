@@ -8,7 +8,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from src.notifications import Notifier, Severity
+from quant_core.notifications import Notifier, Severity
 
 # Configure logging
 logging.basicConfig(

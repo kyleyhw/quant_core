@@ -4,7 +4,7 @@ from typing import Any
 
 from ib_insync import IB, Contract, Order
 
-from src.interfaces import IExecutionHandler
+from quant_core.interfaces import IExecutionHandler
 
 from .connection import IBConnection
 

@@ -7,7 +7,7 @@ from backtesting import Strategy
 
 # Use the production CustomBacktest rather than a duplicated stale copy.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from src.backtesting_extensions import CustomBacktest
+from quant_core.backtesting_extensions import CustomBacktest
 
 
 def ibkr_tiered_commission(quantity: float, price: float) -> float:
