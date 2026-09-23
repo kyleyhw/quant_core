@@ -1,113 +1,49 @@
 import glob
-import importlib
-import inspect
 import os
-import sys
-from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import pandas as pd
 import streamlit as st
 import yfinance as yf
-from backtesting import Strategy
 
-# --- Add project root to path ---
-# Assuming this file is in project_root/dashboard/utils.py
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+from quant_core.registry import discover_strategies as _discover
 
-from quant_core.strategies.base_strategy import BaseStrategy
-
-# Default Data Path
-DEFAULT_DATA_PATH = os.path.join(project_root, "data", "benchmark")
+# Data lives under the directory the dashboard was launched from, so the same
+# dashboard works from a checkout of the platform or from a project using it.
+DEFAULT_DATA_PATH = os.path.join("data", "benchmark")
 
 
-def discover_strategies(private_mode: bool = False) -> dict:
+def discover_strategies() -> dict:
     """
-    Dynamically discovers and imports strategies from the project directories.
-    Returns a dictionary of strategies.
-    If private_mode is True, it will also search the private strategies directory.
+    Installed strategies, from the ``quant_core.strategies`` entry-point group.
+
+    Returns ``{"standalone": [config, ...], "meta": {name: config}, "errors": [...]}``
+    where each config has ``name``, ``class``, ``source`` (the distribution that
+    registered it), ``is_meta`` and ``data_assets``.
     """
-    strategies: dict[str, list[Any] | dict[str, Any]] = {"standalone": [], "meta": {}}
-
-    # Define search paths for public and private strategies
-    public_path = Path(project_root) / "strategies"
-    search_paths = [public_path]
-
-    # --- Secure Private Strategy Discovery ---
-    # Only look for private strategies if the flag is set
-    if private_mode:
-        private_path = Path(project_root) / "strategies_private"
-        if private_path.exists() and any(private_path.iterdir()):
-            search_paths.append(private_path)
-            print("Private mode enabled: Searching for private strategies.")
+    discovery = _discover()
+    standalone: list[dict[str, Any]] = []
+    meta: dict[str, dict[str, Any]] = {}
+    for name, s in discovery.strategies.items():
+        config = {
+            "name": name,
+            "class": s.cls,
+            "source": s.distribution,
+            "is_meta": hasattr(s.cls, "underlying_strategy"),
+            "data_assets": s.data_assets,
+        }
+        if config["is_meta"]:
+            meta[name] = config
         else:
-            print("Warning: Private mode enabled, but private strategies directory not found.")
-
-    for path in search_paths:
-        # In private mode, we need to look one level deeper for the actual strategy files
-        strategy_files_path = path
-        if private_mode and path.name == "strategies_private":
-            strategy_files_path = path
-
-        for file in strategy_files_path.glob("*.py"):
-            if file.name.startswith(("__init__", "base_")):
-                continue
-
-            # Construct module name for import
-            # e.g., strategies.bollinger_bands or strategies_private.pairs_trading_strategy
-            relative_path_parts = path.relative_to(Path(project_root)).parts
-            module_prefix = ".".join(relative_path_parts)
-            module_name = f"{module_prefix}.{file.stem}"
-
-            try:
-                module = importlib.import_module(module_name)
-                for name, obj in inspect.getmembers(module, inspect.isclass):
-                    # Check if it's a valid, non-base strategy class
-                    if issubclass(obj, Strategy | BaseStrategy) and obj not in (
-                        Strategy,
-                        BaseStrategy,
-                    ):
-                        scope = "private" if "strategies_private" in module_name else "public"
-
-                        is_meta = hasattr(obj, "underlying_strategy")
-
-                        config = {"name": name, "class": obj, "scope": scope, "is_meta": is_meta}
-
-                        if is_meta:
-                            cast(dict, strategies["meta"])[name] = config
-                        else:
-                            cast(list, strategies["standalone"]).append(config)
-
-            except ImportError as e:
-                print(f"Error importing module {module_name}: {e}")
-
-    return strategies
+            standalone.append(config)
+    return {"standalone": standalone, "meta": meta, "errors": discovery.errors}
 
 
 def get_data_files() -> list[str]:
-    """Scans all relevant data directories for CSV files."""
-
-    search_paths = [os.path.join(project_root, "data", "benchmark")]
-
-    # Securely add private data path if in private mode
-
-    private_mode = os.environ.get("QUANT_CORE_PRIVATE_MODE", "false").lower() == "true"
-
-    if private_mode:
-        private_data_path = os.path.join(project_root, "strategies_private", "data")
-
-        if os.path.exists(private_data_path):
-            search_paths.append(private_data_path)
-
-    all_files = []
-
-    for path in search_paths:
-        if os.path.exists(path):
-            all_files.extend(glob.glob(os.path.join(path, "*.csv")))
-
-    return all_files
+    """CSV files under ``data/benchmark`` in the current working directory."""
+    if not os.path.exists(DEFAULT_DATA_PATH):
+        return []
+    return sorted(glob.glob(os.path.join(DEFAULT_DATA_PATH, "*.csv")))
 
 
 def get_available_assets() -> dict[str, str]:

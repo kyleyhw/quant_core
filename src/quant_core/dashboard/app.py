@@ -1,98 +1,35 @@
 import os
-import subprocess
-import sys
 
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as st_components
-from backtesting import Backtest, Strategy
+from backtesting import Backtest
 
-# --- Add project root and check for data ---
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
+from quant_core import data_downloader
 from quant_core.commission_models import COMMISSION_MODELS
 from quant_core.dashboard import dashboard_utils
 
-
-# --- Signal Executor Factory ---
-def create_signal_executor(base_strategy_class: type[Strategy]) -> type[Strategy]:
-    """
-    Creates a dynamic subclass of the given strategy class that interprets
-    'buy'/'sell' return values from .next() as trade execution commands.
-    """
-
-    class SignalExecutor(base_strategy_class):  # ty:ignore[unsupported-base]
-        def on_bar(self):
-            # Call the underlying strategy's per-bar hook. BaseStrategy owns
-            # next(), so the wrapper hooks on_bar() instead.
-            signal = super().on_bar()
-
-            if signal == "buy":
-                if self.position.is_short:
-                    self.position.close()
-                if not self.position.is_long:
-                    self.buy()
-            elif signal == "sell":
-                if self.position.is_long:
-                    self.position.close()
-                if not self.position.is_short:
-                    self.sell()
-
-    # Copy name and docstring for clarity
-    SignalExecutor.__name__ = f"Executable{base_strategy_class.__name__}"
-    SignalExecutor.__doc__ = base_strategy_class.__doc__
-    return SignalExecutor
-
-
 # --- Auto-Download Data on First Run ---
-BENCHMARK_DATA_DIR = os.path.join(project_root, "data", "benchmark")
+BENCHMARK_DATA_DIR = dashboard_utils.DEFAULT_DATA_PATH
+FIRST_RUN_TICKERS = ["SPY", "AAPL", "MSFT", "NVDA", "PEP", "KO"]
 if not os.path.exists(BENCHMARK_DATA_DIR) or not os.listdir(BENCHMARK_DATA_DIR):
-    st.info("Benchmark data not found. Downloading initial dataset...")
-
-    download_script_path = os.path.join(project_root, "data", "download_yfinance_data.py")
-
+    st.info(
+        f"No price data found in {os.path.abspath(BENCHMARK_DATA_DIR)}. "
+        f"Downloading {', '.join(FIRST_RUN_TICKERS)} for 2024..."
+    )
     with st.spinner("Fetching data from yfinance... This may take a moment."):
-        # Command to run the download script
-        command = [
-            sys.executable,
-            download_script_path,
-            "--tickers",
-            "SPY",
-            "AAPL",
-            "MSFT",
-            "NVDA",
-            "PEP",
-            "KO",
-            "--start",
-            "2024-01-01",
-            "--end",
-            "2025-01-01",
-            "--output",
-            BENCHMARK_DATA_DIR,  # Specify the directory
-        ]
-
         try:
-            # We use DEVNULL to hide the verbose output of the script from the user
-            subprocess.run(
-                command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            data_downloader.download_data(
+                FIRST_RUN_TICKERS, "2024-01-01", "2025-01-01", BENCHMARK_DATA_DIR
             )
-            st.success("Benchmark data downloaded successfully!")
-            # Rerun the app to load the new data
+            st.success("Benchmark data downloaded.")
             st.rerun()
-        except subprocess.CalledProcessError as e:
-            st.error(
-                f"Failed to download data. Please run the download script manually. Error: {e}"
-            )
+        except Exception as e:
+            st.error(f"Failed to download data: {e}")
             st.code(
-                f"python {download_script_path} --tickers SPY "
-                f"--start 2024-01-01 --end 2025-01-01 "
+                "qc download --tickers SPY --start 2024-01-01 --end 2025-01-01 "
                 f"--output {BENCHMARK_DATA_DIR}"
             )
-            st.stop()
-        except FileNotFoundError:
-            st.error(f"Download script not found at {download_script_path}")
             st.stop()
 
 st.set_page_config(page_title="Quant Core Dashboard", layout="wide")
@@ -101,16 +38,6 @@ st.title("Algorithmic Trading Dashboard")
 
 st.sidebar.header("Configuration")
 
-# --- Private Mode Toggle ---
-is_private_mode_active = st.sidebar.toggle(
-    "Enable Private Mode", value=False, help="Toggle to show/hide private strategies."
-)
-
-if is_private_mode_active:
-    st.sidebar.success("Private Mode is ON")
-else:
-    st.sidebar.info("Private Mode is OFF. Private strategies are hidden.")
-
 # --- Mode Selection (Slider Switch) ---
 download_mode = st.sidebar.toggle(
     "Download New Data (Cache Only)",
@@ -118,9 +45,10 @@ download_mode = st.sidebar.toggle(
     help="Download data temporarily for backtesting without saving to disk.",
 )
 
-# 1. Strategy Selection
-# We need to call discover_strategies AFTER the toggle to ensure it picks up the new state
-strategies = dashboard_utils.discover_strategies(private_mode=is_private_mode_active)
+# 1. Strategy Selection: every installed strategy, from the entry-point group
+strategies = dashboard_utils.discover_strategies()
+for problem in strategies["errors"]:
+    st.sidebar.warning(problem)
 all_strategies = strategies["standalone"]
 strategy_names = [s["name"] for s in all_strategies]
 selected_strategy_name = st.sidebar.selectbox("Select Strategy", strategy_names)
@@ -133,14 +61,15 @@ commission_names = list(COMMISSION_MODELS.keys())
 selected_commission_name = st.sidebar.selectbox("Select Commission Model", commission_names)
 selected_commission = COMMISSION_MODELS[selected_commission_name]
 
+# Two-asset strategies declare data_assets = 2; decided once, used by both data modes.
+is_pairs_strategy = bool(selected_strategy_config and selected_strategy_config["data_assets"] == 2)
+
 if not download_mode:  # Corresponds to "Use Existing Data"
     st.sidebar.subheader("Asset Selection")
     assets_map = dashboard_utils.get_available_assets()
     all_assets = sorted(list(assets_map.keys()))
 
     selected_asset = None
-
-    is_pairs_strategy = "PairsTrading" in selected_strategy_name
 
     if is_pairs_strategy:
         st.sidebar.write("Select assets for the pair (Select 2).")
@@ -284,19 +213,16 @@ if st.sidebar.button("Run Backtest"):
         strategy_class = selected_strategy_config["class"]
 
         try:
-            # --- Wrapper for Signal-based Strategies ---
-            if selected_strategy_name in ["SimpleMACrossover", "RSI2PeriodStrategy"]:
-                bt_strategy_class = create_signal_executor(strategy_class)
-            else:
-                bt_strategy_class = strategy_class
+            bt_strategy_class = strategy_class
 
-            # For pairs trading with downloaded data, we need to ensure the strategy can handle it
-            if "PairsTrading" in selected_strategy_name and isinstance(df.columns, pd.MultiIndex):
-                pass  # Already in the right multi-index format
-            elif "PairsTrading" in selected_strategy_name:
+            # A two-asset strategy needs merged _1 / _2 columns, or a
+            # multi-ticker download that already carries both assets.
+            if is_pairs_strategy and isinstance(df.columns, pd.MultiIndex):
+                pass
+            elif is_pairs_strategy:
                 # Check if we have merged data (from multi-select)
                 if not any(col.endswith("_1") for col in df.columns):
-                    st.error("Pairs trading requires 2 tickers. Please select 2 assets.")
+                    st.error("This strategy trades two assets. Please select 2.")
                     st.stop()
 
             bt = Backtest(

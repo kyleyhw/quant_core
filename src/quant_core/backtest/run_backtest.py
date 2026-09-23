@@ -1,96 +1,46 @@
+"""Run one installed strategy on one or more data inputs and write a report.
+
+Strategies come from the ``quant_core.strategies`` entry-point group. A strategy
+that sets ``data_assets = 2`` receives two inputs merged column-wise with ``_1``
+and ``_2`` suffixes, and the first asset's columns are also exposed as plain
+``Open``/``High``/``Low``/``Close``/``Volume`` for the engine to trade.
+"""
+
 import argparse
-import importlib
+import ast
 import os
-import sys
 
 import pandas as pd
-from backtesting import Strategy
-
-# Add the project root to the Python path so that absolute imports work when
-# this file is run directly. Not needed when invoked as a module
-# (e.g., `python -m run_backtesting.run_backtest`).
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-import inspect
-from pathlib import Path
-
 from backtesting import Backtest
 
 from quant_core.commission_models import COMMISSION_MODELS
-from quant_core.strategies.base_strategy import BaseStrategy
+from quant_core.registry import discover_strategies, print_discovery_errors
+
+DEFAULT_OUTPUT = "reports"
 
 
-# --- Signal Executor Wrapper (for signal-based strategies) ---
-class SignalExecutor(Strategy):
-    underlying_strategy = None
-
-    def init(self):
-        if not self.underlying_strategy:
-            raise ValueError("SignalExecutor requires an `underlying_strategy` to be set.")
-        self.strategy = self.underlying_strategy(self._broker, self.data, self._params)
-        self.strategy.init()
-
-    def next(self):
-        signal = self.strategy.next()
-        if signal == "buy":
-            if self.position.is_short:
-                self.position.close()
-            if not self.position.is_long:
-                self.buy()
-        elif signal == "sell":
-            if self.position.is_long:
-                self.position.close()
-            if not self.position.is_short:
-                self.sell()
-
-
-def discover_strategies() -> dict:
-    """Dynamically discovers and imports all available strategies."""
-    strategies = {}
-
-    public_path = Path(project_root) / "strategies"
-    private_path = Path(project_root) / "strategies_private"
-    search_paths = [public_path, private_path]
-
-    for path in search_paths:
-        for file in path.glob("*.py"):
-            if file.name.startswith(("__init__", "base_")):
-                continue
-
-            module_name = (
-                f"{path.relative_to(Path(project_root)).as_posix().replace('/', '.')}.{file.stem}"
-            )
-
-            try:
-                module = importlib.import_module(module_name)
-                for name, obj in inspect.getmembers(module, inspect.isclass):
-                    if issubclass(obj, Strategy | BaseStrategy) and obj not in (
-                        Strategy,
-                        BaseStrategy,
-                    ):
-                        strategies[name] = obj
-            except ImportError as e:
-                print(f"Could not import {module_name}: {e}")
-    return strategies
-
-
-def get_strategy_class(strategy_name: str, all_strategies: dict):
-    """Returns the strategy class from the discovered strategies."""
-    if strategy_name not in all_strategies:
-        raise ValueError(
-            f"Unknown strategy: {strategy_name}. Available strategies are: "
-            f"{', '.join(all_strategies.keys())}"
-        )
-    return all_strategies[strategy_name]
+def parse_params(pairs: list[str]) -> dict:
+    """Parses ``KEY=VALUE`` strings. Values are read as Python literals when they
+    parse as one (``0.02``, ``True``, ``[1, 2]``) and as plain strings otherwise."""
+    params = {}
+    for pair in pairs:
+        if "=" not in pair:
+            raise ValueError(f"--param expects KEY=VALUE, got {pair!r}")
+        key, raw = pair.split("=", 1)
+        try:
+            params[key] = ast.literal_eval(raw)
+        except (ValueError, SyntaxError):
+            params[key] = raw
+    return params
 
 
 def main(argv: list[str] | None = None) -> None:
     """
     Runs a backtest for a single strategy.
     """
-    all_strategies = discover_strategies()
+    discovery = discover_strategies()
+    print_discovery_errors(discovery)
+    all_strategies = {name: s.cls for name, s in discovery.strategies.items()}
 
     parser = argparse.ArgumentParser(description="Run a backtest for a given strategy.")
     parser.add_argument(
@@ -107,11 +57,16 @@ def main(argv: list[str] | None = None) -> None:
         help="The name of the underlying strategy for a meta-strategy.",
     )
     parser.add_argument(
-        "--strategy-type",
-        type=str,
-        default="mean-reversion",
-        choices=["mean-reversion", "trend"],
-        help="The type of the underlying strategy (for meta-strategies).",
+        "--param",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Override a strategy parameter. Repeatable, e.g. --param stop_loss_pct=0.03.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=DEFAULT_OUTPUT,
+        help=f"Where to write the plot and report (default: {DEFAULT_OUTPUT}).",
     )
     parser.add_argument(
         "--data",
@@ -141,6 +96,9 @@ def main(argv: list[str] | None = None) -> None:
         help="End date for fetching ticker data (YYYY-MM-DD).",
     )
     args = parser.parse_args(argv)
+    params = parse_params(args.param)
+    StrategyClass = all_strategies[args.strategy]
+    data_assets = int(getattr(StrategyClass, "data_assets", 1))
 
     # --- 1. Load Data ---
     from quant_core.data_loader import SmartLoader
@@ -218,8 +176,8 @@ def main(argv: list[str] | None = None) -> None:
         # Multi-file merge
         data = loaded_dfs[0].copy()
 
-        # If PairsTradingStrategy, map specifically to _1 and _2
-        if args.strategy == "PairsTradingStrategy":
+        # A two-asset strategy gets _1 / _2 suffixed columns
+        if data_assets == 2:
             # Asset 1 (Primary) -> Suffix _1
             data = data.add_suffix("_1")
 
@@ -250,21 +208,15 @@ def main(argv: list[str] | None = None) -> None:
 
     # --- 2. Select Strategy ---
     print(f"\nSelecting strategy: {args.strategy}...")
-    StrategyClass = get_strategy_class(args.strategy, all_strategies)
 
     # If it's a meta-strategy, set its parameters
     if hasattr(StrategyClass, "underlying_strategy"):
         if not args.underlying:
             raise ValueError(f"The '{args.strategy}' strategy requires the --underlying argument.")
-        UnderlyingStrategyClass = get_strategy_class(args.underlying, all_strategies)
-        StrategyClass.underlying_strategy = UnderlyingStrategyClass
-
-        # Check if strategy_type is a parameter for the meta-strategy and set it
-        if hasattr(StrategyClass, "strategy_type"):
-            StrategyClass.strategy_type = args.strategy_type
-            print(f"   with Underlying Strategy: {args.underlying} (Type: {args.strategy_type})")
-        else:
-            print(f"   with Underlying Strategy: {args.underlying}")
+        if args.underlying not in all_strategies:
+            raise ValueError(f"Unknown underlying strategy: {args.underlying}")
+        StrategyClass.underlying_strategy = all_strategies[args.underlying]
+        print(f"   with Underlying Strategy: {args.underlying}")
 
     # --- 3. Run Backtest ---
     print(
@@ -272,30 +224,21 @@ def main(argv: list[str] | None = None) -> None:
         f"and commission model: {args.commission}..."
     )
 
-    # --- Wrapper for Signal-based Strategies ---
-    bt_strategy_class = StrategyClass
-    if args.strategy in ["SimpleMACrossover", "RSI2PeriodStrategy"]:
-        SignalExecutor.underlying_strategy = StrategyClass
-        bt_strategy_class = SignalExecutor
-
     bt = Backtest(
-        data, bt_strategy_class, cash=args.cash, commission=COMMISSION_MODELS[args.commission]
+        data,
+        StrategyClass,
+        cash=args.cash,
+        commission=COMMISSION_MODELS[args.commission],  # ty:ignore[invalid-argument-type]
     )
 
-    stats = bt.run()
+    stats = bt.run(**params)
     print("\nBacktest Results:")
     print(stats)
 
     # --- 4. Determine Output Path and Generate Report ---
     print("\nGenerating plot and report...")
 
-    # Dynamically determine if the strategy is private by checking its import path
-    if "strategies_private" in StrategyClass.__module__:
-        output_dir = os.path.join("strategies_private", "reports")
-    else:
-        output_dir = "strategies/reports"  # Changed from 'reports'
-
-    # Ensure the output directory exists
+    output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
