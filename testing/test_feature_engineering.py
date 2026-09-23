@@ -8,7 +8,7 @@ paths agree is Phase 24.
 import pytest
 
 from quant_core.feature_engineering import FeatureEngineer
-from testing.conftest import synthetic_ohlcv
+from quant_core.testing import synthetic_ohlcv
 
 EXPECTED_COLUMNS = ["SMA_50", "SMA_200", "EMA_20", "RSI_14", "ATR_14"]
 

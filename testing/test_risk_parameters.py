@@ -1,26 +1,42 @@
-"""Every strategy must honour the risk parameters it declares.
+"""Conformance: every strategy honours the risk parameters it declares.
 
-This is the test that would have caught the three Phase 11 bugs:
+**Using this from another package.** Copy this file into your own tests and edit
+the block marked "Point this at your strategies". Nothing else needs to change:
+the helpers and the data come from the installed ``quant-core`` package. If a
+strategy never trades on the synthetic series, replace the ``ohlcv`` fixture with
+data it does trade on.
 
-* `set_trailing_sl()` takes a multiple of ATR, so passing a percentage placed the
-  stop roughly seventy times tighter than documented.
-* `SimpleMACrossover` and `RSI2PeriodStrategy` overrode `next()` without calling
-  up, so the trailing stop never ran for them at all.
-* The take-profit branch was a bare `pass`.
+What it proves, per strategy: the trailing stop is armed at ``stop_loss_pct`` of
+price, a take-profit is attached at ``entry * (1 + take_profit_pct)``, setting
+either to zero disables it, and position size follows
+``risk_percent / stop_loss_pct``.
+
+It would have caught all three risk-management bugs fixed in quant-core 0.2.0: a
+stop set in ATR units about seventy times too tight, subclasses that bypassed the
+stop entirely, and a take-profit that was a bare ``pass``.
 """
 
 import pytest
 
 from quant_core.strategies.base_strategy import BaseStrategy
+from quant_core.testing import CASH, probe, synthetic_ohlcv
+
+# isort: split
+# ---- Point this at your strategies -------------------------------------
 from quant_core.strategies.bollinger_bands import BollingerBandsStrategy
 from quant_core.strategies.rsi_2_period import RSI2PeriodStrategy
 from quant_core.strategies.simple_ma_crossover import SimpleMACrossover
-from testing.strategy_probe import CASH, probe
 
-# BuyAndHoldStrategy is deliberately excluded: it extends Strategy directly and
-# declares no risk parameters to honour.
+# BaseStrategy subclasses only. BuyAndHoldStrategy is excluded: it extends
+# backtesting.Strategy directly and declares no risk parameters.
 STRATEGIES = [SimpleMACrossover, RSI2PeriodStrategy, BollingerBandsStrategy]
+# -------------------------------------------------------------------------
 IDS = [s.__name__ for s in STRATEGIES]
+
+
+@pytest.fixture(scope="module")
+def ohlcv():
+    return synthetic_ohlcv()
 
 
 # ----------------------------------------------------------------------
@@ -28,9 +44,18 @@ IDS = [s.__name__ for s in STRATEGIES]
 # ----------------------------------------------------------------------
 @pytest.mark.parametrize("strategy_cls", STRATEGIES, ids=IDS)
 def test_strategy_does_not_define_next(strategy_cls):
-    """Signal logic belongs in on_bar(); next() is owned by BaseStrategy."""
+    """
+    Signal logic belongs in on_bar(); next() is owned by BaseStrategy.
+
+    on_bar() may be inherited, as it is for a subclass that only changes
+    parameters, but something between the strategy and BaseStrategy must
+    implement it, or the strategy never trades.
+    """
     assert "next" not in strategy_cls.__dict__
-    assert "on_bar" in strategy_cls.__dict__
+    assert issubclass(strategy_cls, BaseStrategy)
+    assert strategy_cls.on_bar is not BaseStrategy.on_bar, (
+        f"{strategy_cls.__name__} inherits BaseStrategy's empty on_bar()"
+    )
 
 
 def test_defining_next_is_rejected_at_class_creation():
