@@ -19,23 +19,18 @@ This document outlines the planned phases and tasks for developing the IBKR Open
 
 ## Phase 3: Feature Engineering & ML Model Training
 11. [completed] Develop the shared `src/feature_engineering.py` module with common technical indicators.
-12. [completed] Create a script in research/ for model training.
-    - [completed] Created `research/train_regime_model.py` (XGBoost regime classifier)
-    - [completed] Created `research/utils.py` (simplified data fetching)
-    - [completed] Run script to train and save model
-13. [completed] Save the trained model artifact to the `strategies_private/models/` directory.
+12. [completed] A model-training workflow built on the shared feature module.
+13. [completed] Trained models are kept with the strategies that use them, outside
+    this repository.
 
 ## Phase 4: Machine Learning Strategy Implementation
-14. [completed] Create a private strategy in `strategies_private/` that uses a trained model.
-15. [completed] Backtest the ML-based strategy.
+14. [completed] Model-driven strategies, kept outside this repository.
+15. [completed] Backtest them through the platform.
 
 ## Phase 5: Advanced Strategy Development
-21. [completed] Acquire and document datasets for pairs trading (GLD/GDX).
-22. [completed] Implement and train a Hidden Markov Model (HMM) for regime detection.
-23. [completed] Implement a private HMM-based trading strategy.
-24. [completed] Backtest the HMM strategy.
-25. [completed] Implement a private Pairs Trading strategy.
-26. [completed] Backtest the Pairs Trading strategy.
+21. [completed] Two-asset datasets and the data handling for strategies that trade a
+    pair.
+22. [completed] Further strategy research, kept outside this repository.
 
 ## Phase 6: Safety & Infrastructure
 27. [completed] Implement the `execution.py` module with safety checks.
@@ -175,8 +170,8 @@ the platform must not contain, import, build or name them. Today it does all fou
 and the costs are measured rather than hypothetical:
 
 - `qc --help` fails with `ModuleNotFoundError` in any public checkout, because
-  `src/cli.py` imports from `strategies_private` at module level.
-- The build config includes `strategies_private*`, so a wheel built from a checkout
+  `src/cli.py` imports from the private package at module level.
+- The build config includes the private package, so a wheel built from a checkout
   with the submodule populated ships the private code inside the public artifact.
 - This repository is public, and fifteen of its commits narrate private research,
   one per submodule bump.
@@ -203,16 +198,17 @@ names nothing of the private one.
    move, imports updated repository-wide, no compatibility shims: the only
    downstream consumer migrates in this same phase.
 56. [completed] Remove every reference to private code from public code, config and
-   docs: the module-level import in `src/cli.py`; `strategies_private*` in the build
+   docs: the module-level import in `src/cli.py`; the private package in the build
    config; the private strategy configs and hardcoded "Strategy Summary" header in
    `benchmark.py` (previously a Phase 11 follow-up); private report routing in
    `run_backtest.py`; the dashboard's private-mode toggle; the lint, format,
-   type-check and secrets-scan entries that name `strategies_private`; and the
+   type-check and secrets-scan entries that name the private directory; and the
    README's clone-with-submodules instructions, directory tree and Private Mode
    section.
-57. [completed] A CI guard that fails the build if `strategies_private` or
-   `quant_strategies` appears in any tracked file other than `CHANGELOG.md` and this
-   plan, so the coupling cannot creep back.
+57. [completed] A CI guard that fails the build if a private repository, package or
+   strategy name appears in any tracked file. It compares hashes, so the list of
+   names is not itself public, and no file is exempt, so the coupling cannot
+   creep back.
 58. [completed] Strategy discovery through a `quant_core.strategies` entry-point group,
    where each entry point resolves to a strategy class and its name is the display
    name. The benchmark, the backtest runner and the dashboard all list strategies
@@ -220,9 +216,9 @@ names nothing of the private one.
    so both repositories share one discovery path.
 59. [completed] A `quant_core.commands` entry-point group, where each entry point
    resolves to a function `register(subparsers)` that adds an `argparse`
-   subcommand to `qc`. The model-training commands in `src/cli.py` train private
-   models, so they move to the private repository and keep working as
-   `qc train-regime` and `qc train-ensemble` from its environment.
+   subcommand to `qc`. The model-training commands in `src/cli.py` trained
+   models that are not part of the platform, so they move out and keep working
+   as `qc` commands from the environment of the package that registers them.
 60. [completed] Remove the submodule: the `.gitmodules` entry and the gitlink. This
    stops private activity being recorded in public history. Existing history is
    left as it is; scrubbing it means rewriting and force-pushing public history,

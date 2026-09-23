@@ -39,8 +39,8 @@ Every breaking change a downstream package has to absorb is in this one release.
 - **Strategy discovery uses entry points.** The platform no longer scans
   directories, and the dashboard's private mode is gone. A strategy is available
   if an installed package registers it in the `quant_core.strategies` group.
-- **The `train-regime` and `train-ensemble` commands are removed from `qc`.**
-  They trained models that are not part of the platform. A package can register
+- **The two model-training commands are removed from `qc`.** They trained
+  models that are not part of the platform. A package can register
   its own commands through the `quant_core.commands` group.
 - **`qc benchmark`:** `--scope` is removed. Use `--strategies NAME ...` to filter,
   and `--output-dir` to choose where the report goes.
