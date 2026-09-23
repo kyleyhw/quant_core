@@ -17,9 +17,6 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      # strategies_private is a separate private repository. The default
-      # GITHUB_TOKEN cannot read it, so submodules are deliberately not
-      # initialised. Nothing under testing/ depends on it.
       - uses: actions/checkout@v4
 
       - name: Install uv

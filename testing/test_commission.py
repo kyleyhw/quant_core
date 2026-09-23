@@ -9,8 +9,7 @@ of the dashboard's options could not complete a backtest.
 import pytest
 from backtesting import Backtest
 
-from quant_core.backtesting_extensions import CustomBacktest
-from quant_core.commission_models import COMMISSION_MODELS, ibkr_tiered_commission
+from quant_core.commission_models import COMMISSION_MODELS
 from quant_core.strategies.simple_ma_crossover import SimpleMACrossover
 
 CASH = 10_000
@@ -55,17 +54,3 @@ def test_commission_is_charged_once_per_side(ohlcv):
         f"commission drag was {actual_drag:.3f} points against an expected "
         f"{expected_drag:.3f} for {trades} trades at {rate:.3%}"
     )
-
-
-def test_deprecated_alias_matches_the_engine(ohlcv):
-    """CustomBacktest is kept only for import compatibility and must add nothing."""
-    direct = run(ibkr_tiered_commission, ohlcv)
-    aliased = CustomBacktest(
-        ohlcv,
-        SimpleMACrossover,
-        cash=CASH,
-        commission=ibkr_tiered_commission,  # ty:ignore[invalid-argument-type]
-        finalize_trades=True,
-    ).run()
-    assert aliased["Return [%]"] == pytest.approx(direct["Return [%]"], rel=1e-12)
-    assert aliased["# Trades"] == direct["# Trades"]

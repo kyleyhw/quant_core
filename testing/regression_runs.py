@@ -29,7 +29,8 @@ PINNED_METRICS = [
 ]
 
 # Both commission branches are covered: a float rate and a callable model. The
-# float cases would not even complete a run before CustomBroker was removed.
+# float cases would not even complete a run before the old CustomBroker override
+# was removed in 0.2.0.
 RUNS: dict[str, tuple[type[Strategy], Any]] = {
     "SimpleMACrossover/zero": (SimpleMACrossover, 0.0),
     "RSI2PeriodStrategy/zero": (RSI2PeriodStrategy, 0.0),
