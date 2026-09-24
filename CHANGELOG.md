@@ -3,6 +3,48 @@
 All notable changes to quant-core. Versions follow semantic versioning. Before
 1.0, a minor version bump signals a breaking change.
 
+## [0.4.0] - 2026-09-24
+
+### Added
+
+- **Backtest periods.** `quant_core.service` takes a `start` and `end` date and
+  trims any data to them. `meta()` lists named periods (full history, last five,
+  three and one years, year to date) and each asset's date range, and
+  `resolve_period()` turns a named period into dates.
+- The dashboard has a **Period** control in the run bar, with custom dates when
+  run locally. Links to a run carry the period. The command palette understands
+  `5y`, `1y`, `ytd` and year ranges such as `2020-2022`. The hosted copy
+  precomputes the full history, the last five years and the last year.
+- `quant_core.validation` and **`qc walkforward`**: walk-forward validation with
+  rolling or anchored windows, an optional parameter grid searched on each
+  training window only, warm-up bars, and an out-of-sample equity curve joined
+  from the test windows. The report compares training and test Sharpe, gives
+  the walk-forward efficiency, and counts profitable test years and those that
+  beat buy and hold.
+- The sample data in `data/benchmark` now runs from 2015-01-02 to 2026-09-23 and
+  adds GLD, IWM and QQQ, 13 tickers in all.
+
+### Changed
+
+- `qc backtest --start/--end` now bound the backtest for any data, trimming a CSV
+  file as well as setting the range downloaded for a ticker. Without them a CSV
+  file runs in full, as before, and a ticker still downloads 2020 to 2023.
+- A ticker the dashboard has no file for downloads from 2015 to the end of the
+  chosen period, rather than needing download dates in Settings.
+- The dashboard fills wide screens instead of stopping at 1180 pixels, and draws
+  equity and prices on a log scale when they span more than two and a half
+  times their lowest value.
+- `qc dashboard --export` runs in parallel and precomputes each period for the
+  IBKR tiered and zero commission models by default.
+
+### Fixed
+
+- `BaseStrategy` on fewer than 101 bars: `backtesting.py`'s trailing stop
+  averages true range over 100 bars, so on shorter data the average was all NaN,
+  the stop became minus infinity, and the first trade raised an assertion. The
+  lookback now shortens to half the data on such runs. Runs on longer data are
+  unchanged.
+
 ## [0.3.0] - 2026-09-24
 
 The Streamlit dashboard is replaced by one written for this project: a small
