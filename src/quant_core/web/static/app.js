@@ -117,10 +117,53 @@
     t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable);
   const anyDialogOpen = () => $("palette").open || $("keys").open;
   const today = () => new Date().toISOString().slice(0, 10);
-  function yearBefore(iso) {
-    const d = new Date(iso + "T00:00:00Z");
-    d.setUTCFullYear(d.getUTCFullYear() - 1);
-    return d.toISOString().slice(0, 10);
+  const CUSTOM = "custom";
+
+  // First and last dates of an asset's data. A ticker with no local file is
+  // downloaded from meta.download_from up to today.
+  function assetRange(asset) {
+    const r = state.meta.asset_ranges && state.meta.asset_ranges[asset];
+    return r ? { first: r[0], last: r[1] } : { first: state.meta.download_from || "2015-01-01", last: today() };
+  }
+
+  // Mirrors service.resolve_period: a named period ends on the last bar.
+  function periodWindow(period, asset) {
+    const { first, last } = assetRange(asset);
+    let start = first;
+    if (period === "ytd") start = last.slice(0, 4) + "-01-01";
+    else {
+      const spec = (state.meta.periods || []).find((p) => p.id === period);
+      if (spec && spec.years) {
+        const d = new Date(last + "T00:00:00Z");
+        d.setUTCFullYear(d.getUTCFullYear() - spec.years);
+        d.setUTCDate(d.getUTCDate() + 1);
+        start = d.toISOString().slice(0, 10);
+      }
+    }
+    return { start: start < first ? first : start, end: last };
+  }
+
+  function periodLabel(req) {
+    if (req.period === CUSTOM) return `${req.start || "start"} to ${req.end || "end"}`;
+    const spec = (state.meta.periods || []).find((p) => p.id === req.period);
+    return spec ? spec.label : "Full history";
+  }
+
+  function onPeriodChange() {
+    const custom = $("f-period").value === CUSTOM;
+    $("field-dates").hidden = !custom;
+    $("field-dates-end").hidden = !custom;
+    const asset = (assetInput().value || "").trim().toUpperCase();
+    const { first, last } = assetRange(asset);
+    for (const id of ["f-start", "f-end"]) {
+      $(id).min = first;
+      $(id).max = last;
+    }
+    if (custom && !$("f-start").value) {
+      const w = periodWindow("1y", asset);
+      $("f-start").value = w.start;
+      $("f-end").value = w.end;
+    }
   }
 
   // ------------------------------------------------------------------ theme
@@ -159,8 +202,11 @@
     $("f-asset-text").value = config.asset || "";
     fillSelect($("f-commission"), m.commissions.map((c) => ({ value: c, label: c })), config.commission);
     $("f-cash").value = config.cash;
-    $("f-end").value = config.end || today();
-    $("f-start").value = config.start || yearBefore($("f-end").value);
+    const periods = (m.periods || []).map((p) => ({ value: p.id, label: p.label }));
+    if (state.mode === "live") periods.push({ value: CUSTOM, label: "Custom dates" });
+    fillSelect($("f-period"), periods, config.period || m.defaults.period || "all");
+    $("f-start").value = config.start || "";
+    $("f-end").value = config.end || "";
 
     const live = state.mode === "live";
     $("f-asset").hidden = live;
@@ -266,12 +312,19 @@
       commission: $("f-commission").value,
       cash: Number($("f-cash").value) || state.meta.defaults.cash,
       params: {},
+      period: $("f-period").value || "all",
     };
     if (s && s.data_assets === 2) req.assets.push($("f-asset2").value);
     if (s && s.needs_underlying) req.underlying = $("f-underlying").value;
     if (state.mode === "live") {
-      req.start = $("f-start").value || null;
-      req.end = $("f-end").value || null;
+      if (req.period === CUSTOM) {
+        req.start = $("f-start").value || null;
+        req.end = $("f-end").value || null;
+      } else if (req.period !== "all") {
+        const w = periodWindow(req.period, asset);
+        req.start = w.start;
+        req.end = w.end;
+      }
       for (const p of s ? s.params : []) {
         const typed = (state.params[s.name] || {})[p.name];
         if (typed == null || typed === "" || String(typed) === String(p.default)) continue;
@@ -289,10 +342,15 @@
     if (req.assets[1]) $("f-asset2").value = req.assets[1];
     if (req.underlying) $("f-underlying").value = req.underlying;
     if (req.commission && state.meta.commissions.includes(req.commission)) $("f-commission").value = req.commission;
+    const periodOk = [...$("f-period").options].some((o) => o.value === req.period);
+    $("f-period").value = periodOk ? req.period : state.meta.defaults.period || "all";
+    if (req.period === CUSTOM) {
+      $("f-start").value = req.start || "";
+      $("f-end").value = req.end || "";
+    }
+    onPeriodChange();
     if (state.mode === "live") {
       if (req.cash) $("f-cash").value = req.cash;
-      if (req.start) $("f-start").value = req.start;
-      if (req.end) $("f-end").value = req.end;
       state.params[s.name] = Object.fromEntries(Object.entries(req.params || {}).map(([k, v]) => [k, String(v)]));
     }
     onStrategyChange();
@@ -300,8 +358,12 @@
   }
 
   // ------------------------------------------------------------------ run
+  function periodToken(req) {
+    return req.period === CUSTOM ? `${req.start || ""}~${req.end || ""}` : req.period || "all";
+  }
+
   function requestKey(req) {
-    return [req.strategy, ...req.assets, slug(req.commission)].join(".");
+    return [req.strategy, ...req.assets, slug(req.commission), periodToken(req)].join(".");
   }
 
   function showError(message) {
@@ -329,12 +391,12 @@
     try {
       let result;
       if (state.mode === "static") {
-        const key = `${req.strategy}__${req.assets[0]}__${slug(req.commission)}`;
+        const key = `${req.strategy}__${req.assets[0]}__${slug(req.commission)}__${req.period || "all"}`;
         const res = await fetch(`api/runs/${encodeURIComponent(key)}.json`);
         if (!res.ok) {
           throw new Error(
-            `This copy has no precomputed run of ${strategyByName(req.strategy).label} on ${req.assets[0]}. ` +
-              "Pick one of the listed assets, or run qc dashboard locally."
+            `This copy has no precomputed run of ${strategyByName(req.strategy).label} on ${req.assets[0]} ` +
+              `for ${periodLabel(req).toLowerCase()}. Pick one of the listed options, or run qc dashboard locally.`
           );
         }
         result = await res.json();
@@ -402,7 +464,7 @@
     const tiny = unit === "pp" ? Math.abs(diff) < 0.005 : Math.abs(diff) < 0.005;
     const cls = tiny ? "chip" : (diff > 0) === goodWhenHigher ? "chip good" : "chip bad";
     const text = unit === "pp" ? fmtNum(diff, 2, true) + " pp" : fmtNum(diff, 2, true);
-    return el("span", { class: cls, text: tiny ? "level" : text });
+    return el("span", { class: cls, text: tiny ? "even" : text });
   }
 
   const KPI_DEFS = {
@@ -650,7 +712,7 @@
       if (state.view === "equity" && r.trades.length) parts.push(item("box", "var(--accent)", "In a trade"));
       legend.replaceChildren(...parts);
     }
-    $("chart-note").textContent = {
+    state.noteBase = {
       equity: `Account value in dollars, from ${fmtUsd(r.run.cash, 0)}. Hover or use the arrow keys to read values.`,
       drawdown: "How far equity sat below its previous peak, in percent.",
       price: "Daily close, with each trade's entry and exit. Select a trade in the table to highlight it.",
@@ -684,6 +746,22 @@
     const ticks = [];
     for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Number(v.toPrecision(12)));
     return { lo, hi, ticks };
+  }
+
+  // Ticks at 1, 2 and 5 times powers of ten, thinned to at most maxTicks.
+  function logTicks(min, max, maxTicks) {
+    const all = [];
+    for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++) {
+      for (const k of [1, 2, 5]) {
+        const v = k * Math.pow(10, e);
+        if (v >= min && v <= max) all.push(Number(v.toPrecision(6)));
+      }
+    }
+    let ticks = all;
+    if (ticks.length > maxTicks) ticks = all.filter((v) => /^1(0*)$/.test(String(v).replace(".", "")) || String(v)[0] === "1");
+    if (ticks.length > maxTicks) ticks = ticks.filter((_, i) => i % Math.ceil(ticks.length / maxTicks) === 0);
+    if (ticks.length < 2) return { lo: min, hi: max, ticks: niceTicks(min, max, maxTicks).ticks.filter((v) => v >= min && v <= max) };
+    return { lo: min, hi: max, ticks };
   }
 
   function monthTicks(dates, maxLabels) {
@@ -723,6 +801,7 @@
         fmt: (v) => fmtUsd(v, 2),
         fmtTick: (v) => fmtNum(v, v >= 100 ? 0 : 2),
         markers: true,
+        logable: true,
       };
     }
     return {
@@ -733,6 +812,7 @@
       fmt: (v) => fmtUsd(v, 2),
       fmtTick: fmtUsdShort,
       areaTo: "bottom",
+      logable: true,
       bands: true,
       reference: r.run.cash,
     };
@@ -759,16 +839,26 @@
       }
     }
     if (spec.includeZero) max = 0;
-    const span = max - min || Math.abs(max) || 1;
-    if (!spec.includeZero) {
-      min -= span * 0.04;
-      max += span * 0.04;
+    // Prices and equity that grow several-fold read truthfully only on a log
+    // scale, where equal distances are equal percentage moves.
+    const log = spec.logable && min > 0 && max / min > 2.5;
+    state.logScale = log;
+    let lo, hi, ticks;
+    if (log) {
+      ({ lo, hi, ticks } = logTicks(min / 1.04, max * 1.04, narrow ? 4 : 6));
     } else {
-      min -= span * 0.04;
+      const span = max - min || Math.abs(max) || 1;
+      if (!spec.includeZero) {
+        min -= span * 0.04;
+        max += span * 0.04;
+      } else {
+        min -= span * 0.04;
+      }
+      ({ lo, hi, ticks } = niceTicks(min, max, narrow ? 4 : 5));
     }
-    const { lo, hi, ticks } = niceTicks(min, max, narrow ? 4 : 5);
     const x = (i) => pad.l + (i * (W - pad.l - pad.r)) / Math.max(1, n - 1);
-    const y = (v) => pad.t + ((hi - v) * (H - pad.t - pad.b)) / (hi - lo || 1);
+    const f = log ? Math.log : (v) => v;
+    const y = (v) => pad.t + ((f(hi) - f(v)) * (H - pad.t - pad.b)) / (f(hi) - f(lo) || 1);
     state.geom = { x, y, pad, W, H, n, spec };
 
     const parts = [];
@@ -833,6 +923,8 @@
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     svg.innerHTML = parts.join("");
     svg.setAttribute("aria-label", chartLabel(r, spec));
+    $("chart-note").textContent =
+      (state.noteBase || "") + (log ? " Log scale: equal heights are equal percentage moves." : "");
     if (state.hoverIndex != null) showHover(state.hoverIndex);
   }
 
@@ -939,6 +1031,7 @@
       req,
       label: result.run.label,
       assets: result.run.assets.join("/"),
+      span: `${result.run.first_date.slice(0, 4)}\u2013${result.run.last_date.slice(2, 4)}`,
       ret: result.metrics.return,
       spark,
     };
@@ -994,7 +1087,10 @@
               "span",
               { class: "recent-text" },
               el("span", { class: "recent-name", text: x.label }),
-              el("span", { class: "recent-sub", text: `${x.assets} · ${fmtPct(x.ret, { signed: true })}` })
+              el("span", {
+                class: "recent-sub",
+                text: `${x.assets} \u00b7 ${x.span ? x.span + " \u00b7 " : ""}${fmtPct(x.ret, { signed: true })}`,
+              })
             ),
             spark
           )
@@ -1028,7 +1124,7 @@
   function parseCommand(text) {
     const m = state.meta;
     const raw = text.trim().split(/\s+/).filter(Boolean);
-    const out = { strategy: null, assets: [], commission: null, cash: null, params: {}, used: new Set() };
+    const out = { strategy: null, assets: [], commission: null, cash: null, params: {}, period: null, used: new Set() };
     for (const tok of raw) {
       const low = tok.toLowerCase();
       const kv = low.match(/^([a-z_][a-z0-9_]*)=(.+)$/);
@@ -1041,6 +1137,18 @@
       const cash = low.match(/^\$(\d[\d,_]*)(k?)$/);
       if (cash) {
         out.cash = Number(cash[1].replace(/[,_]/g, "")) * (cash[2] ? 1000 : 1);
+        out.used.add(tok);
+        continue;
+      }
+      const preset = low === "full" ? "all" : (m.periods || []).some((p) => p.id === low) ? low : null;
+      if (preset) {
+        out.period = preset;
+        out.used.add(tok);
+        continue;
+      }
+      const years = low.match(/^(\d{4})(?:-(\d{4}))?$/);
+      if (years && state.mode === "live") {
+        Object.assign(out, { period: CUSTOM, start: `${years[1]}-01-01`, end: `${years[2] || years[1]}-12-31` });
         out.used.add(tok);
         continue;
       }
@@ -1082,7 +1190,7 @@
     const q = text.trim().toLowerCase();
     if (q) {
       const p = parseCommand(text);
-      if (p.strategy || p.assets.length) {
+      if (p.strategy || p.assets.length || p.period) {
         const current = readRequest();
         const s = strategyByName(p.strategy || current.strategy);
         let assets = p.assets.length ? p.assets : current.assets;
@@ -1096,7 +1204,8 @@
           cash: p.cash || current.cash,
           params: { ...current.params, ...p.params },
         };
-        const extras = [req.commission];
+        if (p.period) Object.assign(req, { period: p.period, start: p.start || null, end: p.end || null });
+        const extras = [periodLabel(req), req.commission];
         if (state.mode === "live") {
           extras.push(fmtUsd(req.cash, 0));
           for (const [k, v] of Object.entries(p.params)) extras.push(`${k}=${v}`);
@@ -1257,7 +1366,13 @@
       if (s) {
         const assets = rest.slice(0, s.data_assets).map((a) => a.toUpperCase());
         const commission = m.commissions.find((c) => slug(c) === rest[s.data_assets]) || m.defaults.commission;
-        if (assets.length === s.data_assets) return { strategy, assets, commission, cash: m.defaults.cash, params: {} };
+        const token = rest[s.data_assets + 1] || m.defaults.period || "all";
+        const req = { strategy, assets, commission, cash: m.defaults.cash, params: {}, period: token };
+        if (token.includes("~")) {
+          const [start, end] = token.split("~");
+          Object.assign(req, { period: CUSTOM, start: start || null, end: end || null });
+        }
+        if (assets.length === s.data_assets) return req;
       }
     }
     const last = store.get("last", null);
@@ -1270,6 +1385,7 @@
       commission: m.defaults.commission,
       cash: m.defaults.cash,
       params: {},
+      period: m.defaults.period || "all",
     };
   }
 
@@ -1279,6 +1395,10 @@
       run();
     });
     $("f-strategy").addEventListener("change", onStrategyChange);
+    $("f-period").addEventListener("change", onPeriodChange);
+    // Both asset controls: the live mode swaps which one is labelled f-asset.
+    $("f-asset").addEventListener("change", onPeriodChange);
+    $("f-asset-text").addEventListener("change", onPeriodChange);
     $("toggle-settings").addEventListener("click", () => toggleSettings());
     $("reset-params").addEventListener("click", resetParams);
     $("copy-command").addEventListener("click", copyCommand);
@@ -1374,6 +1494,7 @@
       underlying: req.underlying,
       commission: req.commission || m.defaults.commission,
       cash: req.cash || m.defaults.cash,
+      period: req.period || m.defaults.period,
       start: req.start,
       end: req.end,
     });

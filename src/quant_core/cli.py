@@ -1,7 +1,7 @@
 """The ``qc`` command-line interface.
 
-Built-in commands cover backtesting, benchmarking, data download, the dashboard
-and listing installed strategies. Installed packages add more through the
+Built-in commands cover backtesting, benchmarking, walk-forward validation, data
+download, the dashboard and listing installed strategies. Installed packages add more through the
 ``quant_core.commands`` entry-point group; see :mod:`quant_core.registry`.
 """
 
@@ -9,7 +9,7 @@ import argparse
 import sys
 
 from quant_core import __version__, data_downloader
-from quant_core.backtest import benchmark, run_backtest
+from quant_core.backtest import benchmark, run_backtest, walkforward
 from quant_core.registry import discover_strategies, register_plugin_commands
 from quant_core.service import DEFAULT_DATA_DIR
 
@@ -24,13 +24,13 @@ def handle_backtest(args: argparse.Namespace) -> None:
         str(args.cash),
         "--commission",
         args.commission,
-        "--start",
-        args.start,
-        "--end",
-        args.end,
         "--output-dir",
         args.output_dir,
     ]
+    if args.start:
+        argv += ["--start", args.start]
+    if args.end:
+        argv += ["--end", args.end]
     if args.underlying:
         argv += ["--underlying", args.underlying]
     for param in args.param:
@@ -95,8 +95,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--cash", type=int, default=10000, help="Starting cash.")
     p.add_argument("--commission", default="IBKR Tiered", help="Commission model name.")
-    p.add_argument("--start", default="2020-01-01", help="Start date when fetching a ticker.")
-    p.add_argument("--end", default="2023-12-31", help="End date when fetching a ticker.")
+    p.add_argument(
+        "--start", help="First date to backtest, YYYY-MM-DD; also where a ticker download starts."
+    )
+    p.add_argument(
+        "--end", help="Last date to backtest, YYYY-MM-DD; also where a ticker download ends."
+    )
     p.add_argument("--underlying", help="Underlying strategy name, for a wrapper strategy.")
     p.add_argument(
         "--param",
@@ -111,6 +115,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = subparsers.add_parser("benchmark", help="Run every installed strategy across a dataset.")
     benchmark.build_parser(p)
     p.set_defaults(func=handle_benchmark)
+
+    p = subparsers.add_parser(
+        "walkforward", help="Test a strategy on data it was not fitted to, fold by fold."
+    )
+    walkforward.build_parser(p)
+    p.set_defaults(func=walkforward.main)
 
     p = subparsers.add_parser("download", help="Download historical market data.")
     p.add_argument("--tickers", nargs="+", required=True, help="Tickers to download.")

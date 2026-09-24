@@ -378,10 +378,12 @@ believe it. These are platform tools: the private repository is where they will
 earn their keep, and Phase 11 showed what happens without them. Each item has a
 natural home on the dashboard built in Phase 13.
 
-109. [pending] Walk-forward analysis harness: rolling train and test windows with
-   out-of-sample stitching.
-110. [pending] Parameter optimisation. `backtesting.py` ships an `optimize` method
-   that nothing in the repo calls.
+109. [completed] Walk-forward analysis harness: rolling or anchored train and test
+   windows, an optional parameter grid searched on training data only, and
+   out-of-sample stitching. `quant_core.validation` and `qc walkforward`.
+110. [pending] Parameter optimisation. The walk-forward harness now calls
+   `backtesting.py`'s `optimize` on each training window; a standalone
+   optimisation command and its report are still to do.
 111. [pending] Parameter sensitivity surfaces, so a result that only works at one
    setting is visible as a spike rather than a plateau.
 112. [pending] Purged, embargoed k-fold cross-validation for the machine learning
@@ -577,7 +579,9 @@ Absorbs the data half of the original Phase 9.
    cached Yahoo CSVs under `data/benchmark/` are not clearly redistributable and
    should not be what a fresh checkout depends on. Either find a permissively
    licensed real dataset for the demo and the reference strategies, or make the
-   synthetic fixture good enough to be the demo.
+   synthetic fixture good enough to be the demo. In 0.4.0 the sample grew to 13
+   tickers of daily bars from 2015 to September 2026, for the dashboard's periods
+   and for walk-forward testing, which makes this decision more pressing.
 187. [pending] A plain note on data licensing. yfinance scrapes Yahoo and automated
    use sits outside its terms; say so in the docs and name the provider to move
    to before anything trades real money.

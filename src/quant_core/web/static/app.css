@@ -151,12 +151,14 @@ code {
 
 .main {
   min-width: 0;
+  width: 100%;
+  max-width: 1640px;
+  margin-inline: auto;
   padding-block: 18px 48px;
-  padding-inline: 8px 28px;
+  padding-inline: 12px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 1180px;
 }
 
 /* ------------------------------------------------------------------ rail */
@@ -188,10 +190,10 @@ code {
 }
 .recent-btn:hover { background: var(--surface-2); }
 .recent-btn[aria-current="true"] { background: var(--surface); box-shadow: var(--shadow); }
-.recent-text { display: flex; flex-direction: column; min-width: 0; }
+.recent-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .recent-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recent-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; }
-.recent-spark { flex-shrink: 0; width: 52px; height: 20px; }
+.recent-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-spark { flex-shrink: 0; width: 40px; height: 20px; }
 
 .rail-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding: 0 4px; }
 .rail-actions { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
@@ -220,6 +222,8 @@ code {
 .field > label { font-size: 12px; font-weight: 700; color: var(--ink-2); }
 .runbar .field { width: 220px; }
 .runbar .field-asset { width: 150px; }
+.runbar .field-period { width: 170px; }
+.runbar .field-date { width: 160px; }
 
 .control {
   width: 100%;
@@ -347,7 +351,7 @@ input.control.mono { font-weight: 500; }
 .legend-key.dot { width: 9px; height: 9px; border: 0; border-radius: 50%; background: currentColor; }
 
 .chart-wrap { position: relative; }
-.chart { display: block; width: 100%; height: 300px; overflow: visible; touch-action: pan-y; }
+.chart { display: block; width: 100%; height: clamp(260px, 26vw, 440px); overflow: visible; touch-action: pan-y; }
 .chart:focus-visible { outline-offset: 4px; border-radius: 6px; }
 .chart text { fill: var(--ink-3); font-family: var(--mono); font-size: 11px; }
 .chart .grid { stroke: var(--line); stroke-width: 1; }
@@ -518,7 +522,9 @@ dialog::backdrop { background: rgba(10, 12, 18, 0.45); }
 
 @media (max-width: 560px) {
   .runbar .field,
-  .runbar .field-asset { width: calc(50% - 6px); }
+  .runbar .field-asset,
+  .runbar .field-period,
+  .runbar .field-date { width: calc(50% - 6px); }
   .runbar-actions { width: 100%; }
   .runbar-actions .btn { flex: 1; justify-content: center; }
   .palette-hint { display: none; }
