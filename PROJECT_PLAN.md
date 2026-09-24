@@ -261,71 +261,71 @@ names nothing of the private one.
    `qc --help`, the test suite, and the benchmark on the synthetic fixture.
 
 ## Phase 13: Dashboard Rebuild
-Supersedes the Streamlit dashboard delivered in Phase 10. Direction: the "Ledger
-surface, Desk structure" merge from the design canvas
-(https://claude.ai/artifact/29p1Qjgebz9qRHS8f3nnhb). Pulled ahead of the deeper
-engine work so progress is visible early. Lists strategies from the entry-point
-group added in Phase 12, so it has no private mode: what is installed is what
-shows.
+Supersedes the Streamlit dashboard delivered in Phase 10. Direction: "Studio"
+from the design canvas (https://claude.ai/artifact/29p1Qjgebz9qRHS8f3nnhb), a
+clean product layout that shows only the essentials at first and puts the
+"Notebook" direction's written reading and the "Phosphor" direction's full
+statistics, trade detail and keyboard control one click away. Lists strategies
+from the entry-point group added in Phase 12, so it has no private mode: what is
+installed is what shows.
 
-66. [pending] Decide the UI stack and write the decision down. Recommendation:
-   stay on Streamlit for this phase. It gets the design on screen fastest, which
-   is what this phase is for, and it will fight the design in exactly three
-   places: the persistent nav rail, tab state across reruns, and the slide-over
-   drawer. Accept those, and put every engine call behind the next item so that
-   the frontend can be replaced in Phase 26 without touching the engine.
-67. [pending] A service module, `src/service/`, that the dashboard, the CLI and the
-   benchmark all call for the same things: run a backtest, list strategies and
-   their parameters, load data, read and write the run store. Plain Python, no
-   HTTP. This is the seam Phase 26 wraps in an API, and it is the reason
-   `run_backtest.py` and `benchmark.py` can stop carrying two copies of strategy
-   discovery, data loading and report writing.
-68. [pending] Establish the design system: colour tokens, type scale, and the
-   Spectral / IBM Plex Sans / IBM Plex Mono stack, injected as CSS.
-69. [pending] Build the application shell: nav rail, masthead, specification strip,
-   tab bar.
-70. [pending] Build the run configuration drawer. Must expose strategy parameters,
-   universe, period, data source, capital, commission, and the three
-   `base_strategy` risk parameters, which the current UI does not surface at all.
-71. [pending] Add a run history store so runs persist and can be reloaded and
-   compared. Today each run overwrites the last.
-72. [pending] Replace the embedded `backtesting.py` Bokeh HTML with native equity and
-   drawdown charts sharing one x axis.
-73. [pending] Overview tab: six headline figures plus a plain-language reading of the
-   result.
-74. [pending] Trades tab.
-75. [pending] Metrics tab, grouped into Returns, Risk, Trade Quality, and Run Details
-   instead of the current unsorted stats dump.
+66. [completed] Decide the UI stack. Decision: no Streamlit. A standard-library
+   HTTP server (`quant_core.web.server`) serves one hand-written page in plain
+   HTML, CSS and JavaScript with no build step, and exports the same page as a
+   static site for GitHub Pages. Streamlit would have fought the design in the
+   nav rail, the disclosure state and the command palette, and cannot be hosted
+   statically.
+67. [completed] A service module, `quant_core.service`, that the dashboard's
+   server and static export both call: list strategies and their parameters,
+   list and load data, run a backtest into a JSON-ready result. Plain Python, no
+   HTTP. Still to do: move `run_backtest.py` and `benchmark.py` onto it so they
+   stop carrying their own copies of data loading.
+68. [completed] Design system: colour tokens for light and dark, Manrope and
+   DM Mono, a validated two-series chart palette.
+69. [completed] Application shell: recent-runs rail, run bar, result header.
+70. [completed] Run settings: strategy parameters, asset, download dates,
+   capital, commission, and the three `base_strategy` risk parameters with the
+   position size they imply.
+71. [pending] A run history store so runs persist and can be compared. The rail
+   keeps the last eight runs in the browser; a server-side store is still to do.
+72. [completed] Native charts in place of the embedded Bokeh HTML: equity,
+   drawdown, and price with trades, with a crosshair and keyboard reading.
+73. [completed] Overview: four headline figures against buy and hold, plus a
+   plain-language reading of the result.
+74. [completed] Trades, with each trade selectable on the price chart.
+75. [completed] Metrics, grouped into Returns, Risk, Trade quality and Run
+   details, each beside buy and hold.
 76. [pending] Execution log tab, surfacing `ExecutionManager` blocks and `Notifier`
    events, which are invisible in the UI today.
 77. [pending] Benchmark screen: strategy matrix, return-against-drawdown scatter, and
-   overlaid equity curves. `run_backtesting/benchmark.py` currently has no UI.
-78. [pending] Reports screen for browsing and exporting `strategies/reports/`.
+   overlaid equity curves. `benchmark.py` currently has no UI.
+78. [pending] Reports screen for browsing and exporting `reports/`.
 79. [pending] Paper trading monitor screen. Ships disabled until Phase 18 and 19.
-80. [pending] Tests for dashboard helpers and a smoke test that the app renders.
+80. [completed] Tests for the service module, the server and the export
+   (`testing/test_web.py`), including that the reproduce command gives the same
+   numbers.
 
 ## Phase 14: Dashboard Experience
-81. [pending] Persist the last configuration between sessions. Strategy, asset,
-   dates, and commission all reset on every rerun today.
+81. [completed] Persist the last configuration between sessions, in the browser.
 82. [pending] Write a reproducibility manifest per run: data hash, strategy hash,
    parameters, library versions, so any saved report can be regenerated.
-83. [pending] Surface real errors. The traceback is commented out in `dashboard/app.py`
-   and failures show as a single line.
-84. [pending] Validate configuration before running, rather than failing after the
-   button is pressed. A pairs strategy with one asset selected is the current
-   example.
+83. [completed] Surface real errors. A request that cannot run says why and how to
+   fix it.
+84. [completed] Validate configuration before running, and say what is wrong: a
+   pairs strategy given the same asset twice, a parameter of the wrong type.
 85. [pending] Progress reporting and cancellation for long runs.
 86. [pending] Named runs with tags and free-text notes.
-87. [pending] Shareable deep links to a specific run.
+87. [completed] Shareable deep links to a specific run.
 88. [pending] Side-by-side run comparison with metric deltas.
 89. [pending] Inline metric definitions drawn from `docs/interpreting_report.md`.
 90. [pending] Annotate the equity curve with trade markers and regime shading.
+   Trade spans and markers are done; regime shading is not.
 91. [pending] Export a run as PDF, Markdown, CSV, or a runnable notebook.
-92. [pending] Theme toggle, with the dark "Tape" direction from the design canvas as
-   the alternate theme.
-93. [pending] First-run onboarding. The app currently downloads a hardcoded ticker
-   list for a hardcoded date range with no explanation and no choice.
-94. [pending] Keyboard shortcuts for run, compare, and tab switching.
+92. [completed] Theme toggle: light and dark, following the system setting until
+   chosen.
+93. [completed] First-run onboarding. With no local data the dashboard says how to
+   get some, and a typed ticker downloads a year of it.
+94. [completed] Keyboard shortcuts and a command palette.
 95. [pending] Parameter sweep view: pick ranges, run the grid, see the sensitivity
    surface. The front end for Phase 16's optimisation items.
 96. [pending] Strategy health view: for each strategy, rolling out-of-sample
@@ -638,10 +638,8 @@ replaced without touching the engine, and a phone can reach the kill switch.
    the engine.
 205. [pending] A minimal status page that works on a phone: equity, open positions,
    the last few events, the kill switch. The page to open when an alert fires.
-206. [pending] Decide whether the Streamlit dashboard stays or is replaced by a
-   frontend built against the API, with the Phase 13 design canvas as the
-   specification. The three places Streamlit fought the design in Phase 13 are
-   the evidence for this decision.
+206. [completed] Decided in Phase 13: the Streamlit dashboard is replaced by a
+   frontend written for this project. Moving it onto the HTTP API is item 204.
 
 ## Phase 27: Operational Readiness
 Run continuously alongside the phases above rather than as a block.

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quant Core</title>
+<meta name="description" content="Backtest trading strategies on daily price data and read the result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="static/app.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <aside class="rail" aria-label="Quant Core">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path></svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">Quant Core</span>
+        <span class="brand-sub mono" id="version">backtests</span>
+      </span>
+    </div>
+
+    <div class="rail-section" id="recent-section">
+      <h2 class="rail-heading">Recent runs</h2>
+      <ol class="recent" id="recent"></ol>
+      <p class="rail-empty" id="recent-empty">Runs you make appear here.</p>
+    </div>
+
+    <div class="rail-foot">
+      <span class="mode-badge" id="mode-badge">Connecting</span>
+      <div class="rail-actions">
+        <button type="button" class="ghost-btn" id="open-keys" title="Keyboard shortcuts (?)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"></path></svg>
+          <span>Shortcuts</span>
+        </button>
+        <button type="button" class="ghost-btn icon-only" id="theme-toggle" aria-label="Switch colour theme" title="Switch colour theme">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <form class="runbar" id="runbar" autocomplete="off">
+      <div class="field">
+        <label for="f-strategy">Strategy</label>
+        <select id="f-strategy" class="control"></select>
+      </div>
+      <div class="field" id="field-underlying" hidden>
+        <label for="f-underlying">Wraps</label>
+        <select id="f-underlying" class="control"></select>
+      </div>
+      <div class="field field-asset">
+        <label for="f-asset">Asset</label>
+        <select id="f-asset" class="control"></select>
+        <input id="f-asset-text" class="control mono" list="asset-list" spellcheck="false" hidden>
+        <datalist id="asset-list"></datalist>
+      </div>
+      <div class="field field-asset" id="field-asset2" hidden>
+        <label for="f-asset2">Second asset</label>
+        <select id="f-asset2" class="control"></select>
+      </div>
+      <div class="runbar-actions">
+        <button type="button" class="btn btn-quiet" id="toggle-settings" aria-expanded="false" aria-controls="settings">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
+          Settings
+        </button>
+        <button type="submit" class="btn btn-primary" id="run-btn">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>
+          <span id="run-label">Run</span>
+        </button>
+      </div>
+      <button type="button" class="palette-hint" id="open-palette" title="Command palette">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+        <span>Type a command</span>
+        <kbd id="palette-kbd">Ctrl K</kbd>
+      </button>
+    </form>
+
+    <section class="settings card" id="settings" hidden aria-label="Run settings">
+      <div class="settings-grid">
+        <div class="field">
+          <label for="f-commission">Commission</label>
+          <select id="f-commission" class="control"></select>
+        </div>
+        <div class="field">
+          <label for="f-cash">Starting cash, $</label>
+          <input id="f-cash" class="control mono" type="number" min="100" step="100" inputmode="numeric">
+        </div>
+        <div class="field live-only">
+          <label for="f-start">Download from</label>
+          <input id="f-start" class="control mono" type="date">
+        </div>
+        <div class="field live-only">
+          <label for="f-end">Download to</label>
+          <input id="f-end" class="control mono" type="date">
+        </div>
+      </div>
+      <div class="param-block">
+        <h3 class="param-title">Strategy parameters</h3>
+        <div class="settings-grid" id="params-strategy"></div>
+      </div>
+      <div class="param-block" id="risk-block">
+        <h3 class="param-title">Risk</h3>
+        <div class="settings-grid" id="params-risk"></div>
+        <p class="hint" id="risk-hint"></p>
+      </div>
+      <p class="hint static-only">Parameters and cash are fixed in this hosted copy, which shows precomputed runs. Run <code>qc dashboard</code> locally to change them or to test any ticker.</p>
+      <div class="settings-foot">
+        <button type="button" class="btn btn-quiet" id="reset-params">Reset to defaults</button>
+      </div>
+    </section>
+
+    <div class="alert" id="alert" role="alert" hidden></div>
+
+    <div class="result" id="result" aria-live="polite" aria-busy="true">
+      <header class="result-head">
+        <p class="eyebrow mono" id="r-eyebrow">Loading</p>
+        <h1 id="r-title">Quant Core</h1>
+        <p class="lede" id="r-lede"></p>
+      </header>
+
+      <section class="kpis" id="kpis" aria-label="Headline figures"></section>
+
+      <section class="card chart-card" aria-label="Chart">
+        <div class="chart-top">
+          <div class="segmented" role="radiogroup" aria-label="Chart view" id="views">
+            <button type="button" role="radio" aria-checked="true" data-view="equity">Equity</button>
+            <button type="button" role="radio" aria-checked="false" data-view="drawdown">Drawdown</button>
+            <button type="button" role="radio" aria-checked="false" data-view="price">Price and trades</button>
+          </div>
+          <div class="legend" id="legend" aria-hidden="true"></div>
+        </div>
+        <div class="chart-wrap" id="chart-wrap">
+          <svg id="chart" class="chart" role="img" aria-label="Equity chart" tabindex="0"></svg>
+          <div class="tooltip" id="tooltip" hidden></div>
+        </div>
+        <p class="chart-note" id="chart-note"></p>
+      </section>
+
+      <section class="more" aria-label="Details">
+        <details class="disclosure" id="d-trades" data-key="trades">
+          <summary>
+            <span class="d-title">Trades</span>
+            <span class="d-meta" id="d-trades-meta"></span>
+            <span class="chev" aria-hidden="true"></span>
+          </summary>
+          <div class="d-body">
+            <div class="table-scroll">
+              <table class="table" id="trades-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th><th scope="col">Side</th><th scope="col">Entry</th><th scope="col">Exit</th>
+                    <th scope="col" class="num">Days</th><th scope="col" class="num">Qty</th>
+                    <th scope="col" class="num">Entry price</th><th scope="col" class="num">Exit price</th>
+                    <th scope="col" class="num">Return</th><th scope="col" class="num">P&amp;L, $</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="hint">Select a trade to see it on the price chart.</p>
+          </div>
+        </details>
+
+        <details class="disclosure" id="d-stats" data-key="stats">
+          <summary>
+            <span class="d-title">All statistics</span>
+            <span class="d-meta" id="d-stats-meta"></span>
+            <span class="chev" aria-hidden="true"></span>
+          </summary>
+          <div class="d-body">
+            <div class="stat-groups" id="stat-groups"></div>
+          </div>
+        </details>
+
+        <details class="disclosure" id="d-story" data-key="story">
+          <summary>
+            <span class="d-title">What happened</span>
+            <span class="d-meta">A written reading of the run</span>
+            <span class="chev" aria-hidden="true"></span>
+          </summary>
+          <div class="d-body story" id="story"></div>
+        </details>
+
+        <details class="disclosure" id="d-repro" data-key="repro">
+          <summary>
+            <span class="d-title">Reproduce</span>
+            <span class="d-meta">The command and settings behind this run</span>
+            <span class="chev" aria-hidden="true"></span>
+          </summary>
+          <div class="d-body">
+            <div class="code-row">
+              <pre class="code" id="command"></pre>
+              <button type="button" class="btn btn-quiet" id="copy-command">Copy</button>
+            </div>
+            <dl class="kv" id="run-params"></dl>
+          </div>
+        </details>
+      </section>
+    </div>
+  </main>
+</div>
+
+<dialog class="palette" id="palette" aria-label="Command palette">
+  <form method="dialog" class="palette-form" id="palette-form">
+    <div class="palette-input-row">
+      <span class="prompt mono" aria-hidden="true">&gt;</span>
+      <label for="palette-input" class="sr-only">Command</label>
+      <input id="palette-input" class="palette-input mono" spellcheck="false" autocomplete="off" placeholder="bollinger msft zero, or a command">
+    </div>
+    <ul class="palette-list" id="palette-list" role="listbox" aria-label="Matching commands"></ul>
+    <p class="palette-foot">Name a strategy and an asset to run it. Add <span class="mono">zero</span>, <span class="mono">ibkr</span>, <span class="mono">0.1%</span> for costs, or <span class="mono">key=value</span> for a parameter.</p>
+  </form>
+</dialog>
+
+<dialog class="keys" id="keys" aria-labelledby="keys-title">
+  <div class="keys-head">
+    <h2 id="keys-title">Keyboard shortcuts</h2>
+    <button type="button" class="ghost-btn icon-only" id="close-keys" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
+  </div>
+  <dl class="keys-list">
+    <dt><kbd>R</kbd></dt><dd>Run</dd>
+    <dt><kbd>S</kbd></dt><dd>Choose strategy</dd>
+    <dt><kbd>A</kbd></dt><dd>Choose asset</dd>
+    <dt><kbd>,</kbd></dt><dd>Settings</dd>
+    <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Equity, drawdown, price chart</dd>
+    <dt><kbd>T</kbd></dt><dd>Trades</dd>
+    <dt><kbd>M</kbd></dt><dd>All statistics</dd>
+    <dt><kbd>W</kbd></dt><dd>What happened</dd>
+    <dt><kbd>C</kbd></dt><dd>Copy the reproduce command</dd>
+    <dt><kbd>Ctrl</kbd> <kbd>K</kbd> or <kbd>/</kbd></dt><dd>Command palette</dd>
+    <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step through the chart when it has focus</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Close</dd>
+  </dl>
+</dialog>
+
+<script src="static/app.js"></script>
+</body>
+</html>

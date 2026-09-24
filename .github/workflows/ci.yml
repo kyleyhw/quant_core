@@ -46,8 +46,8 @@ jobs:
       - name: Check formatting
         run: uv run ruff format --check .
 
-      # Non-blocking for now. `ty` reports pre-existing diagnostics across the
-      # dashboard and the IBKR adapter that predate this workflow; failing the
+      # Non-blocking for now. `ty` reports pre-existing diagnostics in the
+      # backtest runner and the test suite that predate this workflow; failing the
       # build on them would mean fixing all of them here rather than in the
       # phase that owns that code. See the housekeeping phase in PROJECT_PLAN.md.
       - name: Type-check (advisory)
@@ -102,3 +102,6 @@ jobs:
           "$PY" -c "import os; from quant_core.testing import synthetic_ohlcv; os.makedirs('data/benchmark', exist_ok=True); synthetic_ohlcv().rename_axis('Date').to_csv('data/benchmark/FIXTURE_synthetic.csv')"
           "$QC" benchmark
           ls reports/benchmark_report_multi_asset_*.md
+          "$QC" dashboard --export site --data-dir data/benchmark
+          test -s site/index.html && test -s site/static/app.js && test -s site/api/meta.json
+          ls site/api/runs/*.json | head -3
