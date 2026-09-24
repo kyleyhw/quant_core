@@ -115,7 +115,6 @@ def test_parameter_overrides_are_applied_and_reproducible(data_dir):
     ("kwargs", "message"),
     [
         ({"strategy": "Nope", "assets": ["FIX"]}, "Unknown strategy"),
-        ({"strategy": "SimpleMACrossover", "assets": ["ZZZ"]}, "No local data for ZZZ"),
         ({"strategy": "SimpleMACrossover", "assets": ["FIX", "ALT"]}, "trades 1 asset"),
         (
             {"strategy": "SimpleMACrossover", "assets": ["FIX"], "params": {"nope": 1}},
@@ -137,6 +136,60 @@ def test_parameter_overrides_are_applied_and_reproducible(data_dir):
 def test_bad_requests_explain_themselves(data_dir, kwargs, message):
     with pytest.raises(service.RunError, match=message):
         service.run_backtest(data_dir=data_dir, **kwargs)
+
+
+def test_unknown_ticker_is_downloaded_and_failures_say_so(data_dir, monkeypatch):
+    from quant_core import data_loader
+
+    calls = []
+
+    def fake_load(self, ticker, start, end, force_download=False):
+        calls.append((ticker, start, end))
+        raise FileNotFoundError("no such ticker")
+
+    monkeypatch.setattr(data_loader.SmartLoader, "load_data", fake_load)
+    with pytest.raises(service.RunError, match="Could not download ZZZ"):
+        service.run_backtest("SimpleMACrossover", ["ZZZ"], end="2025-01-31", data_dir=data_dir)
+    # The window's end is inclusive; the downloader's is not.
+    assert calls == [("ZZZ", service.DOWNLOAD_FROM, "2025-02-01")]
+
+
+def test_periods_end_on_the_last_bar():
+    first, last = "2015-01-02", "2026-09-23"
+    assert service.resolve_period("all", first, last) == (first, last)
+    assert service.resolve_period("5y", first, last) == ("2021-09-24", last)
+    assert service.resolve_period("1y", first, last) == ("2025-09-24", last)
+    assert service.resolve_period("ytd", first, last) == ("2026-01-01", last)
+    assert service.resolve_period("5y", "2024-01-01", "2025-07-11")[0] == "2024-01-01"
+    with pytest.raises(service.RunError, match="Unknown period"):
+        service.resolve_period("7w", first, last)
+
+
+def test_window_trims_local_data_and_is_reproducible(data_dir, tmp_path, capsys):
+    r = service.run_backtest(
+        "SimpleMACrossover", ["FIX"], start="2024-06-03", end="2025-03-31", data_dir=data_dir
+    )
+    assert r["run"]["first_date"] == "2024-06-03"
+    assert r["run"]["last_date"] == "2025-03-31"
+    assert r["series"]["dates"][0] == "2024-06-03"
+    assert "--start 2024-06-03 --end 2025-03-31" in r["run"]["command"]
+    run_backtest.main(shlex.split(r["run"]["command"])[2:] + ["--output-dir", str(tmp_path)])
+    out = capsys.readouterr().out
+    line = next(ln for ln in out.splitlines() if ln.startswith("Return [%]"))
+    assert float(line.split()[-1]) == pytest.approx(r["metrics"]["return"], abs=1e-4)
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "message"),
+    [
+        ("2025-03-01", "2025-01-01", "must come before"),
+        ("2030-01-01", None, "no prices between"),
+        ("2025-07-01", "2025-07-11", "Only 9 bars"),
+    ],
+)
+def test_bad_windows_explain_themselves(data_dir, start, end, message):
+    with pytest.raises(service.RunError, match=message):
+        service.run_backtest("SimpleMACrossover", ["FIX"], start=start, end=end, data_dir=data_dir)
 
 
 def test_best_stretch_names_the_months_that_made_the_money():
@@ -220,18 +273,25 @@ def test_export_writes_a_complete_static_site(data_dir, tmp_path):
         data_dir,
         strategies=["SimpleMACrossover", "BuyAndHoldStrategy"],
         commissions=["IBKR Tiered", "Zero Commission"],
+        periods=["all", "1y"],
+        workers=1,
     )
-    assert n == 2 * 2 * 2
+    assert n == 2 * 2 * 2 * 2
     assert (out / "index.html").is_file()
     assert (out / "static" / "app.js").is_file()
     meta = json.loads((out / "api" / "meta.json").read_text())
     assert meta["mode"] == "static"
     assert meta["data_dir"] is None
     assert [s["name"] for s in meta["strategies"]] == ["BuyAndHoldStrategy", "SimpleMACrossover"]
-    key = server.run_key("SimpleMACrossover", "FIX", "Zero Commission")
-    assert key == "SimpleMACrossover__FIX__zero-commission"
+    assert [p["id"] for p in meta["periods"]] == ["all", "1y"]
+    assert meta["asset_ranges"]["FIX"] == ["2024-01-01", "2025-07-11"]
+    key = server.run_key("SimpleMACrossover", "FIX", "Zero Commission", "1y")
+    assert key == "SimpleMACrossover__FIX__zero-commission__1y"
     run = json.loads((out / "api" / "runs" / f"{key}.json").read_text())
     assert run["run"]["commission"] == "Zero Commission"
+    assert run["run"]["period"] == "1y"
+    assert run["run"]["first_date"] >= "2024-07-12"
+    assert run["run"]["last_date"] == "2025-07-11"
 
 
 def test_server_refuses_cross_site_requests(base_url):

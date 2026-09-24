@@ -39,14 +39,17 @@ uv run qc backtest --strategy <NAME> --data <CSV_OR_TICKER> [OPTIONS]
     `data_assets = 2` takes two; they are merged with `_1` and `_2` suffixes.
 *   `--cash`: Starting cash (default: 10000).
 *   `--commission`: A commission model name (default: `IBKR Tiered`).
-*   `--start`, `--end`: Date range when `--data` is a ticker.
+*   `--start`, `--end`: The first and last dates to backtest, inclusive. They
+    trim a CSV file, and set the range downloaded for a ticker (default for a
+    download: 2020-01-01 to 2023-12-31).
 *   `--underlying`: For a wrapper strategy, the strategy it wraps.
 *   `--param KEY=VALUE`: Override a strategy parameter. Repeatable.
 *   `--output-dir`: Where to write the report (default: `reports`).
 
 ```bash
 uv run qc backtest --strategy SimpleMACrossover \
-    --data data/benchmark/SPY_2024-10-01_2025-11-25.csv --param stop_loss_pct=0.03
+    --data data/benchmark/SPY_2015-01-01_2026-09-24.csv --start 2021-01-01 \
+    --param stop_loss_pct=0.03
 ```
 
 ### `benchmark`
@@ -60,6 +63,43 @@ uv run qc benchmark [--data data/benchmark] [--output-dir reports] [--strategies
 
 Strategies that trade two assets at once (`data_assets = 2`) are skipped, as are
 wrapper strategies registered without an `underlying_strategy`.
+
+### `walkforward`
+
+Test a strategy on data it was not fitted to. The history is cut into folds: a
+training window, then a test window that starts where training ends. With
+`--grid`, each parameter is searched on the training window alone and the best
+values are carried into the test window unchanged; without it, the strategy's
+own parameters are used throughout. The test windows never overlap, so joined end
+to end they form an out-of-sample equity curve.
+
+```bash
+uv run qc walkforward --strategy <NAME> --data <TICKER> [TICKER] [OPTIONS]
+```
+
+*   `--data`: Tickers with a file in `--data-dir` (default: `data/benchmark`), or
+    tickers to download. A pairs strategy takes two.
+*   `--train`, `--test`: Window lengths in bars (defaults: 756 and 252, about
+    three years and one). The last test window may be shorter.
+*   `--step`: Bars between folds (default: the test window). `--anchored` keeps
+    every training window starting at the first bar.
+*   `--grid NAME=V1,V2,...`: A parameter to search on each training window.
+    Repeatable. `--maximize` names the statistic to maximise (default:
+    `Sharpe Ratio`).
+*   `--param KEY=VALUE`: Fix a parameter for every run.
+*   `--warmup N`: Bars run before each test window to prime indicators, and left
+    out of its figures.
+*   `--start`, `--end`, `--cash`, `--commission`, `--underlying`: As for `backtest`.
+
+```bash
+uv run qc walkforward --strategy SimpleMACrossover --data SPY \
+    --grid fast_ma_period=5,10,20 --grid slow_ma_period=30,50,100
+```
+
+It prints the report and writes it, with the fold data as JSON, to `reports/`.
+The report compares training and test Sharpe, gives the walk-forward efficiency
+(test CAGR over mean training CAGR), and counts the test years that made money
+and that beat buy and hold. From Python, use `quant_core.validation.walk_forward`.
 
 ### `download`
 

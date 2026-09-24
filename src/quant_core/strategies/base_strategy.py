@@ -66,6 +66,10 @@ class BaseStrategy(TrailingStrategy):
         # Only initialize backtesting-specific components if not live
         if not self.market_adapter:
             super().init()  # TrailingStrategy.init() computes the ATR series
+            # Its default 100-bar ATR is all NaN on shorter data, which turns the
+            # trailing stop into -inf and makes backtesting.py reject the order.
+            if len(self.data) <= 100:
+                self.set_atr_periods(max(1, len(self.data) // 2))
             self._arm_trailing_stop()
         self.on_init()
 

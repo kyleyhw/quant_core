@@ -2,7 +2,8 @@ name: Dashboard site
 
 # Publishes the hosted copy of the dashboard to GitHub Pages on every push to
 # master: `qc dashboard --export` runs every reference strategy on every file in
-# data/benchmark under every commission model, and the result is a static site.
+# data/benchmark over several periods and commission models, and the result is a
+# static site.
 #
 # GitHub Pages must be switched on once, by hand, with "GitHub Actions" as the
 # source (Settings, then Pages). Until it is, the build still runs and the

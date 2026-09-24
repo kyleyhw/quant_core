@@ -64,6 +64,18 @@
         <label for="f-asset2">Second asset</label>
         <select id="f-asset2" class="control"></select>
       </div>
+      <div class="field field-period">
+        <label for="f-period">Period</label>
+        <select id="f-period" class="control"></select>
+      </div>
+      <div class="field field-date" id="field-dates" hidden>
+        <label for="f-start">From</label>
+        <input id="f-start" class="control mono" type="date">
+      </div>
+      <div class="field field-date" id="field-dates-end" hidden>
+        <label for="f-end">To</label>
+        <input id="f-end" class="control mono" type="date">
+      </div>
       <div class="runbar-actions">
         <button type="button" class="btn btn-quiet" id="toggle-settings" aria-expanded="false" aria-controls="settings">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>
@@ -91,14 +103,6 @@
           <label for="f-cash">Starting cash, $</label>
           <input id="f-cash" class="control mono" type="number" min="100" step="100" inputmode="numeric">
         </div>
-        <div class="field live-only">
-          <label for="f-start">Download from</label>
-          <input id="f-start" class="control mono" type="date">
-        </div>
-        <div class="field live-only">
-          <label for="f-end">Download to</label>
-          <input id="f-end" class="control mono" type="date">
-        </div>
       </div>
       <div class="param-block">
         <h3 class="param-title">Strategy parameters</h3>
@@ -109,7 +113,7 @@
         <div class="settings-grid" id="params-risk"></div>
         <p class="hint" id="risk-hint"></p>
       </div>
-      <p class="hint static-only">Parameters and cash are fixed in this hosted copy, which shows precomputed runs. Run <code>qc dashboard</code> locally to change them or to test any ticker.</p>
+      <p class="hint static-only">This hosted copy shows precomputed runs, so parameters, cash and custom dates are fixed. Run <code>qc dashboard</code> locally to change them or to test any ticker.</p>
       <div class="settings-foot">
         <button type="button" class="btn btn-quiet" id="reset-params">Reset to defaults</button>
       </div>
@@ -214,7 +218,7 @@
       <input id="palette-input" class="palette-input mono" spellcheck="false" autocomplete="off" placeholder="bollinger msft zero, or a command">
     </div>
     <ul class="palette-list" id="palette-list" role="listbox" aria-label="Matching commands"></ul>
-    <p class="palette-foot">Name a strategy and an asset to run it. Add <span class="mono">zero</span>, <span class="mono">ibkr</span>, <span class="mono">0.1%</span> for costs, or <span class="mono">key=value</span> for a parameter.</p>
+    <p class="palette-foot">Name a strategy and an asset to run it. Add <span class="mono">5y</span>, <span class="mono">1y</span>, <span class="mono">ytd</span> or years such as <span class="mono">2020-2022</span> for the period, <span class="mono">zero</span> or <span class="mono">ibkr</span> for costs, and <span class="mono">key=value</span> for a parameter.</p>
   </form>
 </dialog>
 

@@ -32,10 +32,10 @@ STATIC = Path(__file__).parent / "static"
 MAX_BODY = 64 * 1024
 
 
-def run_key(strategy: str, asset: str, commission: str) -> str:
+def run_key(strategy: str, asset: str, commission: str, period: str = "all") -> str:
     """The file name, without extension, of a precomputed run in a static export."""
     slug = re.sub(r"[^a-z0-9]+", "-", commission.lower()).strip("-")
-    return f"{strategy}__{asset.upper()}__{slug}"
+    return f"{strategy}__{asset.upper()}__{slug}__{period}"
 
 
 def site_meta(data_dir: Path | str, mode: str) -> dict[str, Any]:
@@ -197,17 +197,35 @@ def serve(
 # ---------------------------------------------------------------------------
 # Static export
 # ---------------------------------------------------------------------------
+# What a static export precomputes by default: every period and commission model
+# multiplies the number of runs, so the export keeps to the ones people compare.
+EXPORT_PERIODS = ("all", "5y", "1y")
+EXPORT_COMMISSIONS = ("IBKR Tiered", "Zero Commission")
+
+
+def _export_one(job: tuple[str, str, str, str, str, str | None, str | None, str]) -> str:
+    strategy, asset, commission, period, data_dir, start, end, path = job
+    result = service.run_backtest(
+        strategy, [asset], commission=commission, data_dir=data_dir, start=start, end=end
+    )
+    result["run"]["period"] = period
+    Path(path).write_text(json.dumps(result, separators=(",", ":")))
+    return path
+
+
 def export_site(
     out_dir: Path | str,
     data_dir: Path | str = service.DEFAULT_DATA_DIR,
     strategies: list[str] | None = None,
     assets: list[str] | None = None,
-    commissions: list[str] | None = None,
+    commissions: list[str] | tuple[str, ...] = EXPORT_COMMISSIONS,
+    periods: list[str] | tuple[str, ...] = EXPORT_PERIODS,
+    workers: int | None = None,
 ) -> int:
     """
     Writes the dashboard as static files, with every single-asset strategy run on
-    every local asset under every commission model at default parameters.
-    Returns the number of runs written.
+    every local asset for each of ``periods`` under each of ``commissions``, at
+    default parameters. Returns the number of runs written.
     """
     out = Path(out_dir)
     if out.exists():
@@ -227,27 +245,44 @@ def export_site(
         runnable = [s for s in runnable if s["name"] in strategies]
     meta["strategies"] = runnable
     meta["assets"] = [a for a in meta["assets"] if not assets or a in assets]
-    meta["commissions"] = [c for c in meta["commissions"] if not commissions or c in commissions]
+    meta["asset_ranges"] = {a: r for a, r in meta["asset_ranges"].items() if a in meta["assets"]}
+    meta["commissions"] = [c for c in meta["commissions"] if c in commissions]
+    meta["periods"] = [p for p in meta["periods"] if p["id"] in periods]
     if meta["defaults"]["asset"] not in meta["assets"]:
         meta["defaults"]["asset"] = meta["assets"][0] if meta["assets"] else None
     if meta["defaults"]["commission"] not in meta["commissions"]:
         meta["defaults"]["commission"] = meta["commissions"][0] if meta["commissions"] else None
+    if meta["defaults"]["period"] not in [p["id"] for p in meta["periods"]]:
+        meta["defaults"]["period"] = meta["periods"][0]["id"] if meta["periods"] else None
     meta["data_dir"] = None
     (out / "api" / "meta.json").write_text(json.dumps(meta))
 
-    count = 0
+    jobs = []
     for s in runnable:
         for asset in meta["assets"]:
-            for commission in meta["commissions"]:
-                result = service.run_backtest(
-                    s["name"], [asset], commission=commission, data_dir=data_dir
-                )
-                key = run_key(s["name"], asset, commission)
-                (out / "api" / "runs" / f"{key}.json").write_text(json.dumps(result))
-                count += 1
-        print(f"  {s['name']}: {len(meta['assets']) * len(meta['commissions'])} runs")
+            first, last = meta["asset_ranges"][asset]
+            for period in [p["id"] for p in meta["periods"]]:
+                start, end = service.resolve_period(period, first, last)
+                window = (None, None) if period == "all" else (start, end)
+                for commission in meta["commissions"]:
+                    key = run_key(s["name"], asset, commission, period)
+                    path = str(out / "api" / "runs" / f"{key}.json")
+                    jobs.append(
+                        (s["name"], asset, commission, period, str(data_dir), *window, path)
+                    )
+
+    if workers == 1 or len(jobs) < 8:
+        for job in jobs:
+            _export_one(job)
+    else:
+        from concurrent.futures import ProcessPoolExecutor
+
+        with ProcessPoolExecutor(workers) as pool:
+            for i, _ in enumerate(pool.map(_export_one, jobs, chunksize=4), start=1):
+                if i % 50 == 0 or i == len(jobs):
+                    print(f"  {i}/{len(jobs)} runs")
     (out / ".nojekyll").write_text("")
-    return count
+    return len(jobs)
 
 
 def main_export(out_dir: str, data_dir: str) -> None:
