@@ -3,6 +3,16 @@
 All notable changes to quant-core. Versions follow semantic versioning. Before
 1.0, a minor version bump signals a breaking change.
 
+## [0.4.1] - 2026-09-24
+
+### Fixed
+
+- The 0.4.0 sample data was never committed. `.gitignore` ignores `data/`, the
+  earlier benchmark files had been force-added, and replacing them committed
+  only their deletion, so `data/benchmark` was empty on `master` and the hosted
+  dashboard could not rebuild. The 13 files are now committed, `.gitignore`
+  keeps `data/benchmark/`, and CI fails if the sample is missing.
+
 ## [0.4.0] - 2026-09-24
 
 ### Added
