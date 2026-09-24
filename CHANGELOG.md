@@ -3,6 +3,50 @@
 All notable changes to quant-core. Versions follow semantic versioning. Before
 1.0, a minor version bump signals a breaking change.
 
+## [0.3.0] - 2026-09-24
+
+The Streamlit dashboard is replaced by one written for this project: a small
+local web server with a hand-built page, and a static export of the same page
+that GitHub Pages hosts.
+
+### Added
+
+- **The dashboard, rebuilt.** `qc dashboard` serves it at http://localhost:8501
+  and opens a browser. The first screen shows the return, Sharpe ratio, maximum
+  drawdown and win rate, each against buying and holding the same asset with the
+  same cash and commission, and one chart with equity, drawdown, and price with
+  trades views. The rest opens on request: the trade list, 24 statistics in four
+  groups beside buy and hold, a plain-English account of the run, and the
+  `qc backtest` command that reproduces it exactly. Settings expose the
+  strategy's own parameters and the three `BaseStrategy` risk parameters, which
+  the old dashboard never showed. It has a command palette (`Ctrl K`), keyboard
+  shortcuts (`?`), a recent-runs list, links to a specific run, and light and
+  dark themes.
+- `qc dashboard --export DIR` writes a static copy with every single-asset
+  strategy run on every local asset under every commission model.
+- The **Dashboard site** workflow publishes that export to GitHub Pages on every
+  push to `master`, once Pages is switched on for the repository.
+- `quant_core.service`: the calls the dashboard makes, as plain Python.
+  `meta()` lists strategies with their parameters, local assets and commission
+  models. `run_backtest()` runs one backtest into a JSON-ready result, and
+  raises `RunError` with a message fit to show a user when a request cannot run.
+
+### Removed
+
+- The Streamlit app, `quant_core.dashboard`, and the Streamlit Community Cloud
+  deployment files. `streamlit` is no longer a dependency, which drops 18
+  packages from the lockfile.
+- `qc dashboard` no longer passes extra arguments to `streamlit run`. Use
+  `--port`, `--host`, `--data-dir` and `--no-browser`.
+
+### Upgrading
+
+Nothing changes for strategies or for `qc backtest`, `qc benchmark` and
+`qc download`. A package that imported `quant_core.dashboard` must stop; its
+helpers have no replacement beyond `quant_core.service`. If you pin shared
+dependencies to this lockfile, regenerate the pins: `streamlit` and the
+packages only it needed are gone.
+
 ## [0.2.1] - 2026-09-23
 
 ### Fixed

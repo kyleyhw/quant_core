@@ -1,6 +1,6 @@
 [project]
 name = "quant-core"
-version = "0.2.1"
+version = "0.3.0"
 description = "Algorithmic Trading Framework"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,7 +16,6 @@ dependencies = [
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
     "statsmodels>=0.14.6",
-    "streamlit>=1.40.0",
     "ta-lib>=0.6.8",
     "tabulate>=0.9.0",
     "xgboost>=3.1.2",
@@ -55,6 +54,10 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+# The dashboard's page, styles and script ship inside the package.
+"quant_core.web" = ["static/*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
@@ -74,7 +77,6 @@ known-first-party = ["quant_core", "testing", "tools"]
 # in library code.
 [tool.ruff.lint.per-file-ignores]
 "testing/generate_baseline.py" = ["E402"]
-"testing/debug_scripts/dashboard_utils_smoke.py" = ["E402"]
 "src/quant_core/market_adapters/ibkr/connection.py" = ["E402"]
 "testing/debug_scripts/test_data_loading.py" = ["E402"]
 "testing/debug_scripts/test_ui_logic.py" = ["E402"]
