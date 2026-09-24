@@ -71,10 +71,24 @@ uv run qc download --tickers SPY AAPL --start 2024-01-01 --end 2025-01-01 [--out
 
 ### `dashboard`
 
-Launch the Streamlit dashboard. Anything after `dashboard` is passed to
-`streamlit run`.
+Serve the dashboard locally and open it in a browser. It lists every installed
+strategy and reads price files from `data/benchmark` under the directory you run
+it from.
 
 ```bash
-uv run qc dashboard
-uv run qc dashboard --server.port 8600
+uv run qc dashboard                       # http://localhost:8501
+uv run qc dashboard --port 8600 --no-browser
+uv run qc dashboard --data-dir data/multiasset
 ```
+
+`--export DIR` writes a static copy instead of serving: every single-asset
+strategy run on every file in the data folder under every commission model, at
+default parameters, as plain files any static host can serve. The hosted copy on
+GitHub Pages is built this way.
+
+```bash
+uv run qc dashboard --export site
+```
+
+The server binds to `127.0.0.1` by default and has no authentication, so keep it
+on your own machine.

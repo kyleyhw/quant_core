@@ -25,7 +25,7 @@ quant_core/
 ├── reports/               # Generated backtest and benchmark reports
 ├── src/quant_core/        # The installable package
 │   ├── backtest/          # run_backtest.py (single strategy), benchmark.py (all installed)
-│   ├── dashboard/         # Streamlit app, launched with `qc dashboard`
+│   ├── web/               # The dashboard, launched with `qc dashboard`
 │   ├── strategies/        # BaseStrategy and the reference strategies
 │   └── market_adapters/   # Broker integrations (IBKR)
 ├── testing/               # pytest suite

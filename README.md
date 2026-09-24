@@ -4,18 +4,30 @@ This project provides a market-agnostic, Python-based algorithmic trading framew
 
 ## Dashboard
 
-Backtest any installed strategy on sample data from a browser: pick a strategy
-and an asset in the sidebar, press **Run Backtest**, and read the equity curve,
-trades and metrics. It can also fetch fresh prices from Yahoo Finance.
+**Try it in the browser: [kyleyhw.github.io/quant_core](https://kyleyhw.github.io/quant_core/).**
+The hosted copy has every reference strategy already run on every sample asset,
+so you can switch strategy, asset and commission model and read the result
+straight away.
+
+The first screen shows only the essentials: the return, Sharpe ratio, maximum
+drawdown and win rate, each against buying and holding, and one chart. Everything
+else opens on request: the trade list, all 24 statistics side by side with buy
+and hold, a written account of the run, and the `qc backtest` command that
+reproduces it. Press `Ctrl K` (`⌘K` on a Mac) for a command palette
+(`rsi spy zero` runs RSI 2-period on SPY with no commission) and `?` for the
+keyboard shortcuts.
+
+Run it locally to change parameters and cash, or to test any ticker:
 
 ```bash
 git clone https://github.com/kyleyhw/quant_core.git && cd quant_core
 uv sync
-uv run qc dashboard        # then open http://localhost:8501
+uv run qc dashboard        # opens http://localhost:8501
 ```
 
-The same dashboard can be hosted for free on Streamlit Community Cloud; see
-[deploy/streamlit](./deploy/streamlit/README.md).
+The hosted copy is rebuilt from `master` by the
+[Dashboard site workflow](./.github/workflows/pages.yml) with
+`qc dashboard --export`.
 
 ## Purpose
 
@@ -102,10 +114,9 @@ quant_core/
 ├── PROJECT_PLAN.md       # Roadmap
 ├── pyproject.toml        # Package metadata, entry points, tool config
 ├── data/                 # Sample price data (CSV)
-├── deploy/streamlit/     # Hosting the dashboard on Streamlit Community Cloud
 ├── docs/                 # Detailed documentation
 ├── reports/              # Generated backtest and benchmark reports
-├── .github/workflows/    # CI and the release workflow
+├── .github/workflows/    # CI, the release workflow and the dashboard site
 ├── src/quant_core/       # The installable package
 │   ├── interfaces.py     # << CORE: Abstract interfaces for the framework
 │   ├── registry.py       # Strategy and command discovery via entry points
@@ -113,8 +124,9 @@ quant_core/
 │   ├── feature_engineering.py
 │   ├── notifications.py
 │   ├── cli.py            # The `qc` command
+│   ├── service.py        # Runs a backtest into the result the dashboard shows
 │   ├── backtest/         # run_backtest.py and benchmark.py
-│   ├── dashboard/        # Streamlit app
+│   ├── web/              # The dashboard: a local server, its page, and the static export
 │   ├── market_adapters/
 │   │   └── ibkr/         # The IBKR "plug-in"
 │   └── strategies/
@@ -142,17 +154,19 @@ submodule, and register their strategies through an entry point. See
     Create a `.env` file in the root directory for sensitive information (e.g., IBKR connection details).
 3.  **Connect to IBKR TWS/Gateway:**
     Only needed for live or paper trading. Ensure Trader Workstation (TWS) or IB Gateway is running and configured to accept API connections.
-4.  **Launch the Dashboard (UI):**
+4.  **Launch the dashboard:**
     ```bash
     uv run qc dashboard
     ```
-    **Using the Dashboard:**
-    - **Select Strategy**: Choose any installed strategy from the sidebar.
-    - **Select Asset**: Choose an asset (e.g., SPY), or two assets for a strategy that trades a pair.
-    - **Date Range**: Adjust the start and end dates for the backtest.
-    - **Run Backtest**: Click the "Run Backtest" button to execute.
-    - **View Results**: Analyze the interactive plots, metrics, and trade logs.
-    - **Download Data**: Enable this toggle to fetch fresh data from Yahoo Finance for the session, without saving to disk.
+    It opens in your browser at http://localhost:8501.
+    - **Strategy and asset**: pick any installed strategy and any file in
+      `data/benchmark`, or type another ticker to download a year of it.
+    - **Settings**: commission model, starting cash, the strategy's own
+      parameters and the three risk parameters every strategy inherits.
+    - **Run**: the headline figures and chart come first. Trades, all
+      statistics, a written account and the reproduce command open on click.
+    - **Keyboard**: `R` runs, `1` `2` `3` switch the chart, `Ctrl K` opens the
+      command palette and `?` lists the rest.
 5.  **Run from the command line:**
     ```bash
     uv run qc strategies    # what is installed

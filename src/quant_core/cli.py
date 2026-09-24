@@ -6,13 +6,12 @@ and listing installed strategies. Installed packages add more through the
 """
 
 import argparse
-import subprocess
 import sys
-from pathlib import Path
 
 from quant_core import __version__, data_downloader
 from quant_core.backtest import benchmark, run_backtest
 from quant_core.registry import discover_strategies, register_plugin_commands
+from quant_core.service import DEFAULT_DATA_DIR
 
 
 def handle_backtest(args: argparse.Namespace) -> None:
@@ -68,8 +67,15 @@ def handle_strategies(args: argparse.Namespace) -> None:
 
 
 def handle_dashboard(args: argparse.Namespace) -> None:
-    app = Path(__file__).parent / "dashboard" / "app.py"
-    sys.exit(subprocess.call([sys.executable, "-m", "streamlit", "run", str(app), *args.extra]))
+    from quant_core.web import server
+
+    if args.export:
+        server.main_export(args.export, args.data_dir)
+        return
+    try:
+        server.serve(args.host, args.port, args.data_dir, open_browser=not args.no_browser)
+    except OSError as exc:
+        sys.exit(f"Could not start the dashboard on {args.host}:{args.port}: {exc}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -117,8 +123,20 @@ def build_parser() -> argparse.ArgumentParser:
     p = subparsers.add_parser("strategies", help="List installed strategies and where from.")
     p.set_defaults(func=handle_strategies)
 
-    p = subparsers.add_parser("dashboard", help="Launch the Streamlit dashboard.")
-    p.add_argument("extra", nargs=argparse.REMAINDER, help="Passed through to streamlit run.")
+    p = subparsers.add_parser("dashboard", help="Open the dashboard in a browser.")
+    p.add_argument("--port", type=int, default=8501, help="Port to serve on (default: 8501).")
+    p.add_argument("--host", default="127.0.0.1", help="Address to bind (default: 127.0.0.1).")
+    p.add_argument(
+        "--data-dir",
+        default=str(DEFAULT_DATA_DIR),
+        help=f"Folder of price CSV files (default: {DEFAULT_DATA_DIR}).",
+    )
+    p.add_argument("--no-browser", action="store_true", help="Do not open a browser.")
+    p.add_argument(
+        "--export",
+        metavar="DIR",
+        help="Write a static copy with every default run precomputed, instead of serving.",
+    )
     p.set_defaults(func=handle_dashboard)
 
     for warning in register_plugin_commands(subparsers):
