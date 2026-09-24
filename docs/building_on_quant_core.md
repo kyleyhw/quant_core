@@ -15,7 +15,7 @@ name = "my-strategies"
 dependencies = ["quant-core"]
 
 [tool.uv.sources]
-quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.4.0" }
+quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.4.1" }
 ```
 
 Pin a tag, never a branch. Breaking changes and their migration notes are listed
@@ -98,7 +98,7 @@ the pin, and editing the platform takes effect at once:
 
 ```bash
 git submodule add https://github.com/kyleyhw/quant_core quant_core
-git -C quant_core checkout v0.4.0
+git -C quant_core checkout v0.4.1
 ```
 
 ```toml
@@ -115,7 +115,7 @@ only while you work on both:
 
 ```toml
 [tool.uv.sources]
-quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.4.0" }
+quant-core = { git = "https://github.com/kyleyhw/quant_core", tag = "v0.4.1" }
 # while working on both:
 # quant-core = { path = "../quant_core", editable = true }
 ```

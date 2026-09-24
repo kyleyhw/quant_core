@@ -15,8 +15,10 @@ __pycache__/
 # Environment variables
 .env
 
-# Data files (historical CSVs, etc.)
-data/
+# Data files (historical CSVs, etc.). data/benchmark is the tracked sample that
+# the dashboard, its hosted copy and `qc benchmark` read, so it is kept.
+data/*
+!data/benchmark/
 
 # Logs
 logs/

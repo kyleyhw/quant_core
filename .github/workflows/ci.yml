@@ -40,6 +40,10 @@ jobs:
       - name: No private references
         run: uv run python tools/check_private_references.py
 
+      # The dashboard, its hosted copy and `qc benchmark` read this sample.
+      - name: Sample data is committed
+        run: test "$(git ls-files 'data/benchmark/*.csv' | wc -l)" -ge 10
+
       - name: Lint
         run: uv run ruff check .
 
