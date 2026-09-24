@@ -5,9 +5,10 @@ This project provides a market-agnostic, Python-based algorithmic trading framew
 ## Dashboard
 
 **Try it in the browser: [kyleyhw.github.io/quant_core](https://kyleyhw.github.io/quant_core/).**
-The hosted copy has every reference strategy already run on every sample asset,
-so you can switch strategy, asset and commission model and read the result
-straight away.
+The hosted copy has every reference strategy already run on 13 assets of daily
+data from 2015 to September 2026, over the full history, the last five years and
+the last year, so you can switch strategy, asset, period and commission model and
+read the result straight away.
 
 The first screen shows only the essentials: the return, Sharpe ratio, maximum
 drawdown and win rate, each against buying and holding, and one chart. Everything
@@ -160,7 +161,10 @@ submodule, and register their strategies through an entry point. See
     ```
     It opens in your browser at http://localhost:8501.
     - **Strategy and asset**: pick any installed strategy and any file in
-      `data/benchmark`, or type another ticker to download a year of it.
+      `data/benchmark` (2015 to September 2026), or type another ticker to
+      download it.
+    - **Period**: full history, the last five years, the last year, year to
+      date, or custom dates.
     - **Settings**: commission model, starting cash, the strategy's own
       parameters and the three risk parameters every strategy inherits.
     - **Run**: the headline figures and chart come first. Trades, all
@@ -171,6 +175,8 @@ submodule, and register their strategies through an entry point. See
     ```bash
     uv run qc strategies    # what is installed
     uv run qc benchmark     # every installed strategy across data/benchmark
+    uv run qc walkforward --strategy SimpleMACrossover --data SPY \
+        --grid fast_ma_period=5,10,20   # fitted on each window, tested on the next
     ```
     See the **[CLI reference](./docs/cli_usage.md)** for every command.
 6.  **Run the tests:**

@@ -17,6 +17,9 @@ from quant_core.commission_models import COMMISSION_MODELS
 from quant_core.registry import discover_strategies, print_discovery_errors
 
 DEFAULT_OUTPUT = "reports"
+# The window fetched for a ticker given without --start and --end.
+DEFAULT_FETCH_START = "2020-01-01"
+DEFAULT_FETCH_END = "2023-12-31"
 
 
 def parse_params(pairs: list[str]) -> dict:
@@ -86,14 +89,16 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--start",
         type=str,
-        default="2020-01-01",
-        help="Start date for fetching ticker data (YYYY-MM-DD).",
+        default=None,
+        help="First date to backtest, YYYY-MM-DD. Also where a ticker download starts "
+        f"(default for a download: {DEFAULT_FETCH_START}).",
     )
     parser.add_argument(
         "--end",
         type=str,
-        default="2023-12-31",
-        help="End date for fetching ticker data (YYYY-MM-DD).",
+        default=None,
+        help="Last date to backtest, YYYY-MM-DD. Also where a ticker download ends "
+        f"(default for a download: {DEFAULT_FETCH_END}).",
     )
     args = parser.parse_args(argv)
     params = parse_params(args.param)
@@ -130,9 +135,11 @@ def main(argv: list[str] | None = None) -> None:
 
             # Case B: Ticker Symbol (via SmartLoader)
             else:
-                print(f"Requesting data for ticker: {input_val} ({args.start} to {args.end})")
+                fetch_start = args.start or DEFAULT_FETCH_START
+                fetch_end = args.end or DEFAULT_FETCH_END
+                print(f"Requesting data for ticker: {input_val} ({fetch_start} to {fetch_end})")
                 try:
-                    df = loader.load_data(input_val, args.start, args.end)
+                    df = loader.load_data(input_val, fetch_start, fetch_end)
                     # SmartLoader returns index as Date, but might be timezone aware or not.
                     # Ensure consistency.
                     df.index.name = "Date"
@@ -162,6 +169,13 @@ def main(argv: list[str] | None = None) -> None:
                 for col in ["Open", "High", "Low", "Close", "Volume"]:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors="coerce")
+
+                # --start and --end bound the backtest, whatever the source.
+                if args.start or args.end:
+                    df = df.loc[args.start : args.end]
+                    if df.empty:
+                        print(f"Error: {input_val} has no data from {args.start} to {args.end}.")
+                        return
 
                 loaded_dfs.append(df)
 

@@ -17,6 +17,7 @@ import math
 import re
 import shlex
 import warnings
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,18 @@ _PARAM_TYPES = (bool, int, float, str)
 # A ticker also names the file it is downloaded to, so it is kept to these.
 _TICKER = re.compile(r"[A-Z0-9^][A-Z0-9.\-^=]{0,14}")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+# Named backtest windows, ending on the last bar of the data. The dashboard offers
+# them as presets and the static export precomputes some of them.
+PERIODS: list[dict[str, Any]] = [
+    {"id": "all", "label": "Full history"},
+    {"id": "5y", "label": "Last 5 years", "years": 5},
+    {"id": "3y", "label": "Last 3 years", "years": 3},
+    {"id": "1y", "label": "Last year", "years": 1},
+    {"id": "ytd", "label": "Year to date"},
+]
+# Where a download of a ticker with no local file starts when no start is given.
+DOWNLOAD_FROM = "2015-01-01"
 
 
 class RunError(ValueError):
@@ -118,19 +131,63 @@ def list_assets(data_dir: Path | str = DEFAULT_DATA_DIR) -> dict[str, Path]:
     return {p.name.split("_")[0].upper(): p for p in sorted(folder.glob("*.csv"))}
 
 
+def asset_range(path: Path) -> tuple[str, str]:
+    """First and last dates in a price file, read from its first and last rows."""
+    with open(path, "rb") as f:
+        f.readline()
+        first = f.readline().decode().split(",", 1)[0][:10]
+        f.seek(0, 2)
+        size = f.tell()
+        f.seek(max(0, size - 4096))
+        tail = [ln for ln in f.read().decode(errors="ignore").splitlines() if ln.strip()]
+    last = tail[-1].split(",", 1)[0][:10]
+    return first, last
+
+
+def resolve_period(period: str, first: str, last: str) -> tuple[str, str]:
+    """
+    The start and end dates of a named period for data running ``first`` to
+    ``last``. A period longer than the data starts at ``first``.
+    """
+    end, earliest = date.fromisoformat(last), date.fromisoformat(first)
+    if period == "all":
+        start = earliest
+    elif period == "ytd":
+        start = date(end.year, 1, 1)
+    else:
+        spec = next((p for p in PERIODS if p["id"] == period and "years" in p), None)
+        if spec is None:
+            raise RunError(f"Unknown period {period!r}.")
+        year = end.year - int(spec["years"])
+        # 29 February has no counterpart in most years; use the 28th.
+        start = end.replace(year=year, day=min(end.day, 28 if end.month == 2 else end.day))
+        start += timedelta(days=1)
+    return max(start, earliest).isoformat(), end.isoformat()
+
+
 def meta(data_dir: Path | str = DEFAULT_DATA_DIR) -> dict[str, Any]:
     """Everything the dashboard needs to build its controls."""
     strategies, errors = list_strategies()
     assets = list_assets(data_dir)
+    ranges = {}
+    for ticker, path in assets.items():
+        try:
+            ranges[ticker] = asset_range(path)
+        except (OSError, IndexError, UnicodeDecodeError):
+            continue
     return {
         "strategies": strategies,
         "assets": sorted(assets),
+        "asset_ranges": ranges,
+        "periods": PERIODS,
+        "download_from": DOWNLOAD_FROM,
         "commissions": list(COMMISSION_MODELS),
         "defaults": {
             "strategy": _default_strategy(strategies),
             "asset": _default_asset(sorted(assets)),
             "commission": DEFAULT_COMMISSION,
             "cash": DEFAULT_CASH,
+            "period": "all",
         },
         "data_dir": str(data_dir),
         "errors": errors,
@@ -175,33 +232,49 @@ def load_prices(
     end: str | None = None,
 ) -> tuple[pd.DataFrame, str]:
     """
-    Daily prices for ``asset`` and where they came from.
+    Daily prices for ``asset`` from ``start`` to ``end`` inclusive, and where
+    they came from. Either date may be left out to run to that end of the data.
 
     A ticker with a file in ``data_dir`` is read from it. Any other ticker is
-    downloaded for ``start`` to ``end``, which are then required.
+    downloaded, from ``DOWNLOAD_FROM`` and up to today unless the dates say
+    otherwise.
     """
     local = list_assets(data_dir)
     key = asset.strip().upper()
     if not _TICKER.fullmatch(key):
         raise RunError(f"{asset!r} is not a ticker. Use letters, digits, '.', '-', '^' or '='.")
+    check_window(start, end)
     if key in local:
-        return _normalise(pd.read_csv(local[key], index_col=0)), str(local[key])
+        df, source = _normalise(pd.read_csv(local[key], index_col=0)), str(local[key])
+    else:
+        from quant_core.data_loader import SmartLoader
+
+        first = start or DOWNLOAD_FROM
+        # The downloader's end date is exclusive; the window's is inclusive.
+        stop = (date.fromisoformat(end) + timedelta(days=1)) if end else date.today()
+        try:
+            with SmartLoader(data_dir=str(data_dir)) as loader:
+                df = _normalise(loader.load_data(key, first, stop.isoformat()))
+        except Exception as exc:  # the downloader raises several kinds
+            raise RunError(f"Could not download {key}: {exc}") from exc
+        source = key
+    window = df.loc[start:end] if (start or end) else df
+    if window.empty:
+        span = f"{df.index[0]:%Y-%m-%d} to {df.index[-1]:%Y-%m-%d}" if len(df) else "nothing"
+        raise RunError(
+            f"{key} has no prices between {start or 'the start'} and {end or 'the end'}; "
+            f"its data covers {span}."
+        )
+    return window, source
+
+
+def check_window(start: str | None, end: str | None) -> None:
+    """Rejects malformed or reversed dates."""
     for label, value in (("start", start), ("end", end)):
         if value and not _DATE.fullmatch(value):
             raise RunError(f"The {label} date must be YYYY-MM-DD; got {value!r}.")
-    if not (start and end):
-        raise RunError(
-            f"No local data for {key}. Pick one of {', '.join(sorted(local)) or 'none'}, "
-            "or give a start and end date to download it."
-        )
-    from quant_core.data_loader import SmartLoader
-
-    try:
-        with SmartLoader(data_dir=str(data_dir)) as loader:
-            df = loader.load_data(key, start, end)
-    except Exception as exc:  # the downloader raises several kinds
-        raise RunError(f"Could not download {key} for {start} to {end}: {exc}") from exc
-    return _normalise(df), key
+    if start and end and start >= end:
+        raise RunError(f"The start date {start} must come before the end date {end}.")
 
 
 def _merge_pair(first: pd.DataFrame, second: pd.DataFrame) -> pd.DataFrame:
@@ -269,7 +342,10 @@ def run_backtest(
         sources.append(source)
     data = _merge_pair(*frames) if wanted == 2 else frames[0]
     if len(data) < 30:
-        raise RunError(f"Only {len(data)} bars of data; a backtest needs at least 30.")
+        raise RunError(
+            f"Only {len(data)} bars in this period; a backtest needs at least 30. "
+            "Choose a longer period."
+        )
 
     if params is not None and not isinstance(params, dict):
         raise RunError("Parameters must be an object of name and value.")
@@ -480,6 +556,7 @@ def _result(
         "last_date": index[-1].date().isoformat(),
         "bars": len(index),
     }
+    run["window"] = {"start": start, "end": end}
     run["command"] = reproduce_command(run, overrides, start, end)
     return {
         "run": run,
@@ -506,8 +583,11 @@ def reproduce_command(
         parts += ["--underlying", run["underlying"]]
     local = [s for s in run["sources"] if s.endswith(".csv")]
     parts += ["--data", *(local if len(local) == len(run["sources"]) else run["assets"])]
-    if len(local) != len(run["sources"]) and start and end:
-        parts += ["--start", start, "--end", end]
+    downloaded = len(local) != len(run["sources"])
+    if start or downloaded:
+        parts += ["--start", start or DOWNLOAD_FROM]
+    if end or downloaded:
+        parts += ["--end", end or run["last_date"]]
     parts += ["--cash", f"{run['cash']:g}", "--commission", run["commission"]]
     for key, value in overrides.items():
         parts += ["--param", f"{key}={value!r}" if isinstance(value, str) else f"{key}={value}"]
